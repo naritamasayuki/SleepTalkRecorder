@@ -14,26 +14,31 @@ struct ContentView: View {
     }
 
     var body: some View {
-        TabView {
-            MonitorView(recorder: recorder, playbackManager: playbackManager)
-                .tabItem {
-                    Label("モニター", systemImage: "moon.stars.fill")
-                }
+        VStack(spacing: 0) {
+            TabView {
+                MonitorView(recorder: recorder, playbackManager: playbackManager)
+                    .tabItem {
+                        Label("モニター", systemImage: "moon.stars.fill")
+                    }
 
-            RecordingsListView(
-                store: store,
-                playbackManager: playbackManager,
-                isMonitoring: recorder.state != .idle
-            )
-            .tabItem {
-                Label("録音履歴", systemImage: "list.bullet.rectangle")
+                RecordingsListView(
+                    store: store,
+                    playbackManager: playbackManager,
+                    isMonitoring: recorder.state != .idle
+                )
+                .tabItem {
+                    Label("録音履歴", systemImage: "list.bullet.rectangle")
+                }
+                .badge(store.recordings.count)
+
+                SettingsView(recorder: recorder)
+                    .tabItem {
+                        Label("設定", systemImage: "gearshape.fill")
+                    }
             }
-            .badge(store.recordings.count)
 
-            SettingsView(recorder: recorder)
-                .tabItem {
-                    Label("設定", systemImage: "gearshape.fill")
-                }
+            // 全タブ共通の下段バナー広告領域
+            AdBannerView()
         }
         .preferredColorScheme(.dark)
         .tint(.indigo)

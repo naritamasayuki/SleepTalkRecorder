@@ -27,7 +27,8 @@ SleepTalkRecorder/
 │   ├── AudioPlaybackManager.swift  # AVAudioPlayerによる再生管理
 │   └── RecordingStore.swift        # 録音ファイル・JSONメタデータ永続化
 └── Views/
-    ├── ContentView.swift           # タブナビゲーション
+    ├── ContentView.swift           # タブナビゲーションと下段広告配置
+    ├── AdBannerView.swift          # 下段バナー広告領域（320×50相当）
     ├── MonitorView.swift           # おやすみモニター画面
     ├── LevelMeterView.swift        # 音量レベル・しきい値メーター
     ├── RecordingsListView.swift    # 録音履歴一覧・再生画面
