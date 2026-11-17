@@ -40,6 +40,48 @@ final class RecordingStore {
         logger.info("録音を追加しました: \(item.fileName, privacy: .public) (\(item.duration, format: .fixed(precision: 1))秒)")
     }
 
+    /// 文字起こし結果をもとに音声ファイル名とメタデータを更新する
+    func updateTranscript(for itemID: UUID, transcript: String) {
+        guard let index = recordings.firstIndex(where: { $0.id == itemID }) else { return }
+        var item = recordings[index]
+        item.transcript = transcript
+
+        if let sanitizedBase = SpeechTranscriber.sanitizeFileName(transcript) {
+            let currentURL = fileURL(for: item)
+            let pathExtension = currentURL.pathExtension.isEmpty ? "m4a" : currentURL.pathExtension
+            let uniqueName = makeUniqueFileName(base: sanitizedBase, ext: pathExtension, excluding: item.fileName)
+            let destinationURL = directoryURL.appendingPathComponent(uniqueName)
+
+            if currentURL != destinationURL, fileManager.fileExists(atPath: currentURL.path) {
+                do {
+                    try fileManager.moveItem(at: currentURL, to: destinationURL)
+                    item.fileName = uniqueName
+                    logger.info("寝言内容でファイル名を変更しました: \(uniqueName, privacy: .public)")
+                } catch {
+                    logger.error("ファイル名変更に失敗しました: \(error.localizedDescription, privacy: .public)")
+                }
+            }
+        }
+
+        recordings[index] = item
+        saveMetadata()
+    }
+
+    private func makeUniqueFileName(base: String, ext: String, excluding currentName: String) -> String {
+        let initial = "\(base).\(ext)"
+        if initial == currentName || !fileManager.fileExists(atPath: directoryURL.appendingPathComponent(initial).path) {
+            return initial
+        }
+        var suffix = 2
+        while true {
+            let candidate = "\(base)_\(suffix).\(ext)"
+            if candidate == currentName || !fileManager.fileExists(atPath: directoryURL.appendingPathComponent(candidate).path) {
+                return candidate
+            }
+            suffix += 1
+        }
+    }
+
     /// 指定された録音アイテムと音声ファイルを削除する
     func delete(_ item: RecordingItem) {
         let url = fileURL(for: item)

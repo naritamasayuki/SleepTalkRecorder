@@ -76,8 +76,9 @@ struct SettingsView: View {
                     Text("プリロール録音を有効にすると、寝言の話し始めが途切れずに保存されます。")
                 }
 
-                Section("表示設定") {
+                Section("表示・ファイル名設定") {
                     Toggle("開始時に画面を暗くする（夜間モード）", isOn: $recorder.settings.dimScreenDuringMonitoring)
+                    Toggle("寝言を文字起こししてファイル名にする", isOn: $recorder.settings.transcribeForFileName)
                 }
 
                 Section {

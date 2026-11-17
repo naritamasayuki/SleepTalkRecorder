@@ -12,14 +12,44 @@ struct RecorderSettings: Equatable, Codable, Sendable {
     var preRollSeconds: TimeInterval
     /// モニタリング中に画面を暗く（省電力表示に）するかどうか
     var dimScreenDuringMonitoring: Bool
+    /// 録音後に寝言を文字起こしして音声ファイル名に設定するかどうか
+    var transcribeForFileName: Bool
 
     static let `default` = RecorderSettings(
         thresholdDecibels: -35.0,
         silenceTimeoutSeconds: 3.0,
         minimumDurationSeconds: 0.8,
         preRollSeconds: 1.5,
-        dimScreenDuringMonitoring: true
+        dimScreenDuringMonitoring: true,
+        transcribeForFileName: true
     )
+
+    init(
+        thresholdDecibels: Float,
+        silenceTimeoutSeconds: TimeInterval,
+        minimumDurationSeconds: TimeInterval,
+        preRollSeconds: TimeInterval,
+        dimScreenDuringMonitoring: Bool,
+        transcribeForFileName: Bool = true
+    ) {
+        self.thresholdDecibels = thresholdDecibels
+        self.silenceTimeoutSeconds = silenceTimeoutSeconds
+        self.minimumDurationSeconds = minimumDurationSeconds
+        self.preRollSeconds = preRollSeconds
+        self.dimScreenDuringMonitoring = dimScreenDuringMonitoring
+        self.transcribeForFileName = transcribeForFileName
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let defaults = Self.default
+        thresholdDecibels = try container.decodeIfPresent(Float.self, forKey: .thresholdDecibels) ?? defaults.thresholdDecibels
+        silenceTimeoutSeconds = try container.decodeIfPresent(TimeInterval.self, forKey: .silenceTimeoutSeconds) ?? defaults.silenceTimeoutSeconds
+        minimumDurationSeconds = try container.decodeIfPresent(TimeInterval.self, forKey: .minimumDurationSeconds) ?? defaults.minimumDurationSeconds
+        preRollSeconds = try container.decodeIfPresent(TimeInterval.self, forKey: .preRollSeconds) ?? defaults.preRollSeconds
+        dimScreenDuringMonitoring = try container.decodeIfPresent(Bool.self, forKey: .dimScreenDuringMonitoring) ?? defaults.dimScreenDuringMonitoring
+        transcribeForFileName = try container.decodeIfPresent(Bool.self, forKey: .transcribeForFileName) ?? defaults.transcribeForFileName
+    }
 
     private static let storageKey = "com.sleeptalkrecorder.settings"
 
@@ -46,7 +76,8 @@ struct RecorderSettings: Equatable, Codable, Sendable {
             silenceTimeoutSeconds: min(max(silenceTimeoutSeconds, 1.0), 10.0),
             minimumDurationSeconds: min(max(minimumDurationSeconds, 0.2), 5.0),
             preRollSeconds: min(max(preRollSeconds, 0.0), 3.0),
-            dimScreenDuringMonitoring: dimScreenDuringMonitoring
+            dimScreenDuringMonitoring: dimScreenDuringMonitoring,
+            transcribeForFileName: transcribeForFileName
         )
     }
 }

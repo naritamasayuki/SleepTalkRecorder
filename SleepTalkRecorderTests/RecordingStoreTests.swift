@@ -77,4 +77,37 @@ final class RecordingStoreTests: XCTestCase {
         XCTAssertEqual(loaded.preRollSeconds, 3.0)
         XCTAssertFalse(loaded.dimScreenDuringMonitoring)
     }
+
+    func testUpdateTranscriptRenamesFileAndHandlesDuplicates() throws {
+        let tempDirectory = try makeTempDirectory()
+        defer { try? FileManager.default.removeItem(at: tempDirectory) }
+
+        let store = RecordingStore(directoryURL: tempDirectory)
+
+        let file1URL = tempDirectory.appendingPathComponent("raw_1.m4a")
+        try Data("audio1".utf8).write(to: file1URL)
+        let item1 = RecordingItem(fileName: "raw_1.m4a", duration: 2.0, peakDecibels: -20.0)
+        store.add(item1)
+
+        let file2URL = tempDirectory.appendingPathComponent("raw_2.m4a")
+        try Data("audio2".utf8).write(to: file2URL)
+        let item2 = RecordingItem(fileName: "raw_2.m4a", duration: 3.0, peakDecibels: -18.0)
+        store.add(item2)
+
+        store.updateTranscript(for: item1.id, transcript: "おやすみ")
+        store.updateTranscript(for: item2.id, transcript: "おやすみ")
+
+        let updated1 = store.recordings.first { $0.id == item1.id }
+        let updated2 = store.recordings.first { $0.id == item2.id }
+
+        XCTAssertEqual(updated1?.fileName, "おやすみ.m4a")
+        XCTAssertEqual(updated1?.transcript, "おやすみ")
+        XCTAssertTrue(FileManager.default.fileExists(atPath: tempDirectory.appendingPathComponent("おやすみ.m4a").path))
+
+        XCTAssertEqual(updated2?.fileName, "おやすみ_2.m4a")
+        XCTAssertEqual(updated2?.transcript, "おやすみ")
+        XCTAssertTrue(FileManager.default.fileExists(atPath: tempDirectory.appendingPathComponent("おやすみ_2.m4a").path))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: file1URL.path))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: file2URL.path))
+    }
 }

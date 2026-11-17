@@ -102,10 +102,19 @@ struct RecordingsListView: View {
                 .disabled(isMonitoring)
 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(item.formattedDate)
+                    Text(item.displayTitle)
                         .font(.headline)
+                        .lineLimit(2)
+
+                    Text(item.fileName)
+                        .font(.caption2)
+                        .foregroundStyle(.cyan.opacity(0.85))
+                        .lineLimit(1)
 
                     HStack(spacing: 12) {
+                        if item.transcript != nil {
+                            Label(item.formattedDate, systemImage: "calendar")
+                        }
                         Label(item.formattedDuration, systemImage: "clock")
                         Label(String(format: "%.0f dB", item.peakDecibels), systemImage: "speaker.wave.2")
                     }

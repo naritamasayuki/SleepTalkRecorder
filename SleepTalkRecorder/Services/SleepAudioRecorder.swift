@@ -89,6 +89,10 @@ final class SleepAudioRecorder {
             return
         }
 
+        if settings.transcribeForFileName {
+            _ = await SpeechTranscriber.requestAuthorizationIfNeeded()
+        }
+
         do {
             try configureAudioSession()
             try startAudioEngine()
@@ -172,6 +176,13 @@ final class SleepAudioRecorder {
                     guard let self else { return }
                     self.store.add(item)
                     self.sessionRecordingCount += 1
+
+                    if self.settings.transcribeForFileName {
+                        let fileURL = self.store.fileURL(for: item)
+                        if let transcript = await SpeechTranscriber.transcribe(fileURL: fileURL) {
+                            self.store.updateTranscript(for: item.id, transcript: transcript)
+                        }
+                    }
                 }
             },
             onError: { [weak self] message in
