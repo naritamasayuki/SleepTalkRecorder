@@ -109,5 +109,25 @@ final class RecordingStoreTests: XCTestCase {
         XCTAssertTrue(FileManager.default.fileExists(atPath: tempDirectory.appendingPathComponent("おやすみ_2.m4a").path))
         XCTAssertFalse(FileManager.default.fileExists(atPath: file1URL.path))
         XCTAssertFalse(FileManager.default.fileExists(atPath: file2URL.path))
+
+        store.deleteAll()
+        XCTAssertTrue(store.recordings.isEmpty)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: tempDirectory.appendingPathComponent("おやすみ.m4a").path))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: tempDirectory.appendingPathComponent("おやすみ_2.m4a").path))
+    }
+
+    func testLegacySettingsJsonDecodesWithDefaults() throws {
+        let legacyJSON = """
+        {
+          "thresholdDecibels": -30.0,
+          "silenceTimeoutSeconds": 4.0,
+          "minimumDurationSeconds": 1.0,
+          "preRollSeconds": 2.0,
+          "dimScreenDuringMonitoring": false
+        }
+        """
+        let decoded = try JSONDecoder().decode(RecorderSettings.self, from: Data(legacyJSON.utf8))
+        XCTAssertEqual(decoded.thresholdDecibels, -30.0)
+        XCTAssertTrue(decoded.transcribeForFileName)
     }
 }

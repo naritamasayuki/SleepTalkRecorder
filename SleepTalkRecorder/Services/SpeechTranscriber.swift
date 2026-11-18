@@ -39,32 +39,71 @@ enum SpeechTranscriber {
 
         let request = SFSpeechURLRecognitionRequest(url: fileURL)
         request.shouldReportPartialResults = false
-        // オンデバイス認識に対応している場合はオフラインでも実行できるようにする
-        if recognizer.supportsOnDeviceRecognition {
-            request.requiresOnDeviceRecognition = true
-        }
+        // オンデバイス認識に限定せず、利用可能な最高精度の認識エンジンにフォールバックさせる
+        request.requiresOnDeviceRecognition = false
 
         return await withCheckedContinuation { continuation in
-            var hasResumed = false
-            var task: SFSpeechRecognitionTask?
-            task = recognizer.recognitionTask(with: request) { result, error in
-                guard !hasResumed else { return }
-
+            let box = RecognitionContinuationBox(continuation: continuation)
+            let task = recognizer.recognitionTask(with: request) { result, error in
                 if let error {
-                    hasResumed = true
                     logger.info("文字起こしを完了できませんでした: \(error.localizedDescription, privacy: .public)")
-                    continuation.resume(returning: nil)
-                    task?.cancel()
+                    box.finish(with: nil)
                     return
                 }
 
                 if let result, result.isFinal {
-                    hasResumed = true
                     let text = result.bestTranscription.formattedString
                         .trimmingCharacters(in: .whitespacesAndNewlines)
-                    continuation.resume(returning: text.isEmpty ? nil : text)
+                    box.finish(with: text.isEmpty ? nil : text)
                 }
             }
+            box.attach(task: task, timeoutSeconds: 15.0)
+        }
+    }
+
+    /// 音声認識コールバックとタイムアウトをスレッドセーフに1回だけ解決するボックス
+    private final class RecognitionContinuationBox: @unchecked Sendable {
+        private let lock = NSLock()
+        private var continuation: CheckedContinuation<String?, Never>?
+        private var task: SFSpeechRecognitionTask?
+        private var isFinished = false
+
+        init(continuation: CheckedContinuation<String?, Never>) {
+            self.continuation = continuation
+        }
+
+        func attach(task: SFSpeechRecognitionTask, timeoutSeconds: TimeInterval) {
+            lock.lock()
+            if isFinished {
+                lock.unlock()
+                task.cancel()
+                return
+            }
+            self.task = task
+            lock.unlock()
+
+            DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + timeoutSeconds) { [weak self] in
+                self?.finish(with: nil)
+            }
+        }
+
+        func finish(with value: String?) {
+            lock.lock()
+            guard !isFinished else {
+                lock.unlock()
+                return
+            }
+            isFinished = true
+            let cont = continuation
+            let runningTask = task
+            continuation = nil
+            task = nil
+            lock.unlock()
+
+            if value == nil {
+                runningTask?.cancel()
+            }
+            cont?.resume(returning: value)
         }
     }
 

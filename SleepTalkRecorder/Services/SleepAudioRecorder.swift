@@ -41,6 +41,7 @@ final class SleepAudioRecorder {
 
     private let store: RecordingStore
     private let logger = Logger(subsystem: "com.sleeptalkrecorder.app", category: "SleepAudioRecorder")
+    private var isStarting = false
     private var audioEngine: AVAudioEngine?
     private var processor: AudioStreamProcessor?
     private var interruptionObserver: NSObjectProtocol?
@@ -75,7 +76,9 @@ final class SleepAudioRecorder {
 
     /// 寝言モニタリング（自動待機・録音）を開始する
     func startMonitoring() async {
-        guard state == .idle else { return }
+        guard state == .idle, !isStarting else { return }
+        isStarting = true
+        defer { isStarting = false }
 
         refreshPermissionState()
         if permissionState == .undetermined {
@@ -166,9 +169,16 @@ final class SleepAudioRecorder {
             onLevelUpdate: { [weak self] decibels, isRecording, clipDuration in
                 Task { @MainActor [weak self] in
                     guard let self, self.state != .idle, self.state != .interrupted else { return }
-                    self.currentDecibels = decibels
-                    self.currentClipDuration = clipDuration
-                    self.state = isRecording ? .recording : .monitoring
+                    let targetState: MonitoringState = isRecording ? .recording : .monitoring
+                    if self.state != targetState {
+                        self.state = targetState
+                    }
+                    if abs(self.currentDecibels - decibels) >= 0.4 {
+                        self.currentDecibels = decibels
+                    }
+                    if isRecording || self.currentClipDuration != 0 {
+                        self.currentClipDuration = clipDuration
+                    }
                 }
             },
             onRecordingSaved: { [weak self] item in
@@ -422,6 +432,7 @@ private final class AudioStreamProcessor: @unchecked Sendable {
         let now = Date()
         let fileName = "sleeptalk_\(Int(now.timeIntervalSince1970))_\(UUID().uuidString.prefix(6)).m4a"
         let fileURL = directoryURL.appendingPathComponent(fileName)
+        try? FileManager.default.createDirectory(at: directoryURL, withIntermediateDirectories: true)
 
         let outputSettings: [String: Any] = [
             AVFormatIDKey: kAudioFormatMPEG4AAC,

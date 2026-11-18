@@ -40,4 +40,14 @@ final class AudioRingBufferTests: XCTestCase {
         XCTAssertEqual(buffer.totalFrames, 0)
         XCTAssertTrue(buffer.drainAll().isEmpty)
     }
+
+    func testClearEmptiesBufferAndResetsTotalFrames() {
+        var buffer = AudioRingBuffer<String>(maxFrames: 100)
+        buffer.append("chunk1", frameCount: 30)
+        buffer.append("chunk2", frameCount: 40)
+        buffer.clear()
+
+        XCTAssertEqual(buffer.totalFrames, 0)
+        XCTAssertTrue(buffer.drainAll().isEmpty)
+    }
 }
