@@ -35,7 +35,7 @@ final class AudioPlaybackManager: NSObject, AVAudioPlayerDelegate {
         stop()
 
         guard FileManager.default.fileExists(atPath: fileURL.path) else {
-            errorMessage = "音声ファイルが見つかりませんでした。"
+            errorMessage = String(localized: "Audio file could not be found.")
             logger.error("再生対象ファイルが存在しません: \(fileURL.path, privacy: .public)")
             return
         }
@@ -50,7 +50,7 @@ final class AudioPlaybackManager: NSObject, AVAudioPlayerDelegate {
             audioPlayer.prepareToPlay()
 
             guard audioPlayer.play() else {
-                errorMessage = "音声の再生を開始できませんでした。"
+                errorMessage = String(localized: "Unable to start audio playback.")
                 logger.error("AVAudioPlayer.play() が false を返しました")
                 return
             }
@@ -62,7 +62,7 @@ final class AudioPlaybackManager: NSObject, AVAudioPlayerDelegate {
             isPlaying = true
             startTimer()
         } catch {
-            errorMessage = "音声の再生に失敗しました: \(error.localizedDescription)"
+            errorMessage = String(localized: "Failed to play audio: \(error.localizedDescription)")
             logger.error("再生初期化エラー: \(error.localizedDescription, privacy: .public)")
             stop()
         }
@@ -128,9 +128,9 @@ final class AudioPlaybackManager: NSObject, AVAudioPlayerDelegate {
 
     nonisolated func audioPlayerDecodeErrorDidOccur(_ player: AVAudioPlayer, error: (any Error)?) {
         Task { @MainActor [weak self] in
-            let message = error?.localizedDescription ?? "不明なデコードエラー"
+            let message = error?.localizedDescription ?? "Unknown decode error"
             self?.logger.error("再生デコードエラー: \(message, privacy: .public)")
-            self?.errorMessage = "音声ファイルの再生中にエラーが発生しました。"
+            self?.errorMessage = String(localized: "An error occurred while playing the audio file.")
             self?.stop()
         }
     }

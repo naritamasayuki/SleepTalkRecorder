@@ -23,15 +23,29 @@ enum SpeechTranscriber {
         }
     }
 
-    /// 音声ファイルを日本語で文字起こしし、認識されたテキストを返す（認識不可・エラー時は nil）
-    static func transcribe(fileURL: URL) async -> String? {
+    /// 端末のロケール（未対応時は英語にフォールバック）に応じた音声認識ロケールを返す
+    static func resolvedLocale(for preferredLocale: Locale = .autoupdatingCurrent) -> Locale {
+        let supported = SFSpeechRecognizer.supportedLocales()
+        if supported.contains(preferredLocale) {
+            return preferredLocale
+        }
+        if let languageCode = preferredLocale.language.languageCode?.identifier,
+           let matched = supported.first(where: { $0.language.languageCode?.identifier == languageCode }) {
+            return matched
+        }
+        return Locale(identifier: "en-US")
+    }
+
+    /// 音声ファイルを端末の言語設定に合わせて文字起こしし、認識されたテキストを返す（認識不可・エラー時は nil）
+    static func transcribe(fileURL: URL, locale: Locale = .autoupdatingCurrent) async -> String? {
         guard SFSpeechRecognizer.authorizationStatus() == .authorized else {
             return nil
         }
         guard FileManager.default.fileExists(atPath: fileURL.path) else {
             return nil
         }
-        guard let recognizer = SFSpeechRecognizer(locale: Locale(identifier: "ja-JP")),
+        let targetLocale = resolvedLocale(for: locale)
+        guard let recognizer = SFSpeechRecognizer(locale: targetLocale) ?? SFSpeechRecognizer(locale: Locale(identifier: "en-US")),
               recognizer.isAvailable else {
             logger.warning("音声認識エンジンが利用できないため文字起こしをスキップします")
             return nil

@@ -90,7 +90,7 @@ final class RecordingStore {
                 try fileManager.removeItem(at: url)
             } catch {
                 logger.error("音声ファイルの削除に失敗しました: \(error.localizedDescription, privacy: .public)")
-                lastErrorMessage = "音声ファイルの削除に失敗しました: \(error.localizedDescription)"
+                lastErrorMessage = String(localized: "Failed to delete audio file: \(error.localizedDescription)")
             }
         }
         recordings.removeAll { $0.id == item.id }
@@ -140,7 +140,7 @@ final class RecordingStore {
                 .sorted { $0.createdAt > $1.createdAt }
         } catch {
             logger.error("録音メタデータの読み込みに失敗しました: \(error.localizedDescription, privacy: .public)")
-            lastErrorMessage = "録音履歴の読み込みに失敗しました。"
+            lastErrorMessage = String(localized: "Failed to load recording history.")
             recordings = []
         }
     }
@@ -151,7 +151,7 @@ final class RecordingStore {
             try fileManager.createDirectory(at: directoryURL, withIntermediateDirectories: true)
         } catch {
             logger.error("録音ディレクトリの作成に失敗しました: \(error.localizedDescription, privacy: .public)")
-            lastErrorMessage = "録音フォルダの作成に失敗しました。"
+            lastErrorMessage = String(localized: "Failed to create recordings folder.")
         }
     }
 
@@ -165,7 +165,7 @@ final class RecordingStore {
             try data.write(to: metadataURL, options: [.atomic])
         } catch {
             logger.error("録音メタデータの保存に失敗しました: \(error.localizedDescription, privacy: .public)")
-            lastErrorMessage = "録音履歴の保存に失敗しました。"
+            lastErrorMessage = String(localized: "Failed to save recording history.")
         }
     }
 }

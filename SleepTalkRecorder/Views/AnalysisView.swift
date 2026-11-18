@@ -1,7 +1,7 @@
 import Charts
 import SwiftUI
 
-/// 録音された寝言データの時間帯分布・傾向・頻出ワードを可視化する分析画面
+/// 録音された寝言データの深層心理・時間帯分布・傾向・頻出ワードを可視化する分析画面
 struct AnalysisView: View {
     var store: RecordingStore
 
@@ -14,9 +14,9 @@ struct AnalysisView: View {
             Group {
                 if store.recordings.isEmpty {
                     ContentUnavailableView(
-                        "分析するデータがまだありません",
+                        "No Data to Analyze",
                         systemImage: "chart.bar.xaxis",
-                        description: Text("寝言が録音されると、時間帯の傾向やよく言った言葉がここに表示されます。")
+                        description: Text("Once sleep talk is recorded, time trends and subconscious insights will appear here.")
                     )
                 } else {
                     ScrollView {
@@ -36,7 +36,7 @@ struct AnalysisView: View {
                     }
                 }
             }
-            .navigationTitle("寝言分析")
+            .navigationTitle("Sleep Talk Analysis")
         }
     }
 
@@ -53,10 +53,10 @@ struct AnalysisView: View {
                 }
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("深層心理の要求（推定）")
+                    Text("Subconscious Need (Estimated)")
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                    Text(primary.type.rawValue)
+                    Text(primary.type.localizedTitle)
                         .font(.title3.bold())
                         .foregroundStyle(.white)
                 }
@@ -74,7 +74,7 @@ struct AnalysisView: View {
 
             if !primary.matchedKeywords.isEmpty {
                 HStack(spacing: 6) {
-                    Text("根拠ワード:")
+                    Text("Keywords:")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                     ForEach(primary.matchedKeywords.prefix(4), id: \.self) { word in
@@ -89,14 +89,14 @@ struct AnalysisView: View {
             }
 
             VStack(alignment: .leading, spacing: 8) {
-                Text("心理ニーズのバランス")
+                Text("Psychological Needs Balance")
                     .font(.caption.bold())
                     .foregroundStyle(.secondary)
 
                 ForEach(allNeeds.prefix(3)) { need in
                     VStack(alignment: .leading, spacing: 4) {
                         HStack {
-                            Text(need.type.rawValue)
+                            Text(need.type.localizedTitle)
                                 .font(.caption)
                             Spacer()
                             Text("\(Int((need.ratio * 100).rounded()))%")
@@ -143,11 +143,11 @@ struct AnalysisView: View {
 
     private func summaryGrid(_ data: SleepTalkAnalysis) -> some View {
         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-            statCard(title: "総録音回数", value: "\(data.totalCount) 件", icon: "waveform", color: .indigo)
-            statCard(title: "合計時間", value: formatDuration(data.totalDuration), icon: "clock.fill", color: .cyan)
-            statCard(title: "平均の長さ", value: String(format: "%.1f 秒", data.averageDuration), icon: "timer", color: .mint)
+            statCard(title: String(localized: "Total Clips"), value: "\(data.totalCount)", icon: "waveform", color: .indigo)
+            statCard(title: String(localized: "Total Duration"), value: formatDuration(data.totalDuration), icon: "clock.fill", color: .cyan)
+            statCard(title: String(localized: "Avg Duration"), value: String(format: String(localized: "%.1f s"), data.averageDuration), icon: "timer", color: .mint)
             statCard(
-                title: "最大音量",
+                title: String(localized: "Peak Volume"),
                 value: data.maxPeakDecibels.map { String(format: "%.0f dB", $0) } ?? "--",
                 icon: "speaker.wave.3.fill",
                 color: .orange
@@ -175,11 +175,11 @@ struct AnalysisView: View {
     private func hourlyChartCard(_ data: SleepTalkAnalysis) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text("時間帯別の寝言回数")
+                Text("Sleep Talk by Hour")
                     .font(.headline)
                 Spacer()
                 if let peak = data.peakHour {
-                    Text("ピーク: \(peak)時台")
+                    Text("Peak: \(peak):00")
                         .font(.caption.bold())
                         .foregroundStyle(.cyan)
                 }
@@ -187,8 +187,8 @@ struct AnalysisView: View {
 
             Chart(data.hourlyBuckets) { bucket in
                 BarMark(
-                    x: .value("時", bucket.hour),
-                    y: .value("回数", bucket.count)
+                    x: .value("Hour", bucket.hour),
+                    y: .value("Count", bucket.count)
                 )
                 .foregroundStyle(bucket.hour == data.peakHour ? Color.cyan : Color.indigo.opacity(0.8))
                 .cornerRadius(3)
@@ -198,7 +198,7 @@ struct AnalysisView: View {
                     AxisGridLine()
                     AxisValueLabel {
                         if let hour = value.as(Int.self) {
-                            Text("\(hour)時")
+                            Text("\(hour)")
                                 .font(.caption2)
                         }
                     }
@@ -216,13 +216,13 @@ struct AnalysisView: View {
     private func volumeCard(_ data: SleepTalkAnalysis) -> some View {
         let breakdown = data.volumeBreakdown
         return VStack(alignment: .leading, spacing: 12) {
-            Text("声の大きさの傾向")
+            Text("Volume Distribution")
                 .font(.headline)
 
             HStack(spacing: 12) {
-                volumeBadge(label: "ささやき", sub: "< -30 dB", count: breakdown.quietCount, color: .indigo)
-                volumeBadge(label: "ふつう", sub: "-30〜-15 dB", count: breakdown.normalCount, color: .cyan)
-                volumeBadge(label: "大きめ", sub: ">= -15 dB", count: breakdown.loudCount, color: .orange)
+                volumeBadge(label: String(localized: "Whisper"), sub: "< -30 dB", count: breakdown.quietCount, color: .indigo)
+                volumeBadge(label: String(localized: "Normal"), sub: "-30 to -15 dB", count: breakdown.normalCount, color: .cyan)
+                volumeBadge(label: String(localized: "Loud"), sub: ">= -15 dB", count: breakdown.loudCount, color: .orange)
             }
         }
         .padding()
@@ -231,7 +231,7 @@ struct AnalysisView: View {
 
     private func volumeBadge(label: String, sub: String, count: Int, color: Color) -> some View {
         VStack(spacing: 4) {
-            Text("\(count) 件")
+            Text("\(count)")
                 .font(.headline.monospacedDigit())
                 .foregroundStyle(color)
             Text(label)
@@ -247,7 +247,7 @@ struct AnalysisView: View {
 
     private func keywordsCard(_ data: SleepTalkAnalysis) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("よく出た言葉（文字起こし分析）")
+            Text("Frequent Words (Transcribed)")
                 .font(.headline)
 
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 95), spacing: 8)], alignment: .leading, spacing: 8) {
@@ -273,7 +273,7 @@ struct AnalysisView: View {
 
     private func insightsCard(_ data: SleepTalkAnalysis) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            Label("分析レポート", systemImage: "sparkles")
+            Label("Insights Report", systemImage: "sparkles")
                 .font(.headline)
                 .foregroundStyle(.yellow)
 
@@ -294,11 +294,9 @@ struct AnalysisView: View {
 
     private func formatDuration(_ seconds: TimeInterval) -> String {
         let total = max(0, Int(seconds.rounded()))
-        let minutes = total / 60
-        let secs = total % 60
-        if minutes > 0 {
-            return "\(minutes)分\(secs)秒"
-        }
-        return "\(secs)秒"
+        let formatter = DateComponentsFormatter()
+        formatter.allowedUnits = total >= 60 ? [.minute, .second] : [.second]
+        formatter.unitsStyle = .abbreviated
+        return formatter.string(from: TimeInterval(total)) ?? "\(total)s"
     }
 }

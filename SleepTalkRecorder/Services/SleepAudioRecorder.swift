@@ -84,11 +84,11 @@ final class SleepAudioRecorder {
         if permissionState == .undetermined {
             let granted = await requestPermission()
             guard granted else {
-                errorMessage = "マイクへのアクセスが許可されていないため、録音を開始できません。"
+                errorMessage = String(localized: "Microphone access is not permitted, so recording cannot start.")
                 return
             }
         } else if permissionState == .denied {
-            errorMessage = "マイクへのアクセスが拒否されています。設定アプリからマイクの許可を有効にしてください。"
+            errorMessage = String(localized: "Microphone access is denied. Please enable microphone permission in Settings.")
             return
         }
 
@@ -108,7 +108,7 @@ final class SleepAudioRecorder {
             logger.info("寝言モニタリングを開始しました (しきい値: \(self.settings.thresholdDecibels) dBFS)")
         } catch {
             logger.error("モニタリング開始エラー: \(error.localizedDescription, privacy: .public)")
-            errorMessage = "オーディオ録音の開始に失敗しました: \(error.localizedDescription)"
+            errorMessage = String(localized: "Failed to start audio recording: \(error.localizedDescription)")
             cleanupEngine()
             state = .idle
         }
@@ -158,7 +158,7 @@ final class SleepAudioRecorder {
             throw NSError(
                 domain: "SleepAudioRecorder",
                 code: -1,
-                userInfo: [NSLocalizedDescriptionKey: "有効なマイク入力フォーマットを取得できませんでした。"]
+                userInfo: [NSLocalizedDescriptionKey: String(localized: "Could not obtain a valid microphone input format.")]
             )
         }
 
@@ -288,7 +288,7 @@ final class SleepAudioRecorder {
                     state = .monitoring
                 } catch {
                     logger.error("割り込み後の再開に失敗しました: \(error.localizedDescription, privacy: .public)")
-                    errorMessage = "割り込み後の録音再開に失敗しました。"
+                    errorMessage = String(localized: "Failed to resume recording after interruption.")
                     state = .idle
                 }
             }
@@ -309,7 +309,7 @@ final class SleepAudioRecorder {
                 state = .monitoring
             } catch {
                 logger.error("ルート変更後の再起動に失敗しました: \(error.localizedDescription, privacy: .public)")
-                errorMessage = "マイクの切り替え後に録音を再開できませんでした。"
+                errorMessage = String(localized: "Could not resume recording after audio route change.")
                 state = .idle
             }
         }
@@ -464,7 +464,7 @@ private final class AudioStreamProcessor: @unchecked Sendable {
             recordedDuration = totalDuration
         } catch {
             logger.error("録音ファイル作成・書き込みエラー: \(error.localizedDescription, privacy: .public)")
-            onError("録音ファイルの作成に失敗しました。")
+            onError(String(localized: "Failed to create recording file."))
             cleanupTempFile(at: fileURL)
             detector.reset()
         }

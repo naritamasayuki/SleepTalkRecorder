@@ -18,7 +18,7 @@ struct ContentView: View {
             TabView {
                 MonitorView(recorder: recorder, playbackManager: playbackManager)
                     .tabItem {
-                        Label("モニター", systemImage: "moon.stars.fill")
+                        Label("Monitor", systemImage: "moon.stars.fill")
                     }
 
                 RecordingsListView(
@@ -27,18 +27,18 @@ struct ContentView: View {
                     isMonitoring: recorder.state != .idle
                 )
                 .tabItem {
-                    Label("録音履歴", systemImage: "list.bullet.rectangle")
+                    Label("Recordings", systemImage: "list.bullet.rectangle")
                 }
                 .badge(store.recordings.count)
 
                 AnalysisView(store: store)
                     .tabItem {
-                        Label("分析", systemImage: "chart.bar.xaxis")
+                        Label("Analysis", systemImage: "chart.bar.xaxis")
                     }
 
                 SettingsView(recorder: recorder)
                     .tabItem {
-                        Label("設定", systemImage: "gearshape.fill")
+                        Label("Settings", systemImage: "gearshape.fill")
                     }
             }
 

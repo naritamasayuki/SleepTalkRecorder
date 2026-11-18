@@ -30,7 +30,7 @@ struct MonitorView: View {
                     nightDimOverlay
                 }
             }
-            .navigationTitle("おやすみモニター")
+            .navigationTitle("Sleep Monitor")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 if recorder.state != .idle && recorder.settings.dimScreenDuringMonitoring {
@@ -38,13 +38,13 @@ struct MonitorView: View {
                         Button {
                             isNightDimmed = true
                         } label: {
-                            Label("夜間表示", systemImage: "moon.fill")
+                            Label("Night Display", systemImage: "moon.fill")
                         }
                     }
                 }
             }
             .alert(
-                "エラー",
+                "Error",
                 isPresented: Binding(
                     get: { recorder.errorMessage != nil },
                     set: { if !$0 { recorder.errorMessage = nil } }
@@ -89,7 +89,7 @@ struct MonitorView: View {
     private var sessionStatsCard: some View {
         HStack(spacing: 16) {
             VStack(spacing: 4) {
-                Text("監視時間")
+                Text("Elapsed Time")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 if let startTime = recorder.sessionStartTime, recorder.state != .idle {
@@ -109,10 +109,10 @@ struct MonitorView: View {
                 .frame(height: 36)
 
             VStack(spacing: 4) {
-                Text("検知した寝言")
+                Text("Detected Clips")
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                Text("\(recorder.sessionRecordingCount) 件")
+                Text("\(recorder.sessionRecordingCount) clips")
                     .font(.title3.monospacedDigit().bold())
                     .foregroundStyle(recorder.sessionRecordingCount > 0 ? .cyan : .primary)
             }
@@ -132,7 +132,7 @@ struct MonitorView: View {
 
             VStack(alignment: .leading, spacing: 6) {
                 HStack {
-                    Text("検知しきい値")
+                    Text("Detection Threshold")
                         .font(.subheadline)
                     Spacer()
                     Text("\(Int(recorder.settings.thresholdDecibels)) dB")
@@ -149,7 +149,7 @@ struct MonitorView: View {
                 )
                 .tint(.yellow)
 
-                Text("環境音に反応しないよう、黄色のラインを普段の静かな音量より少し高めに設定してください。")
+                Text("Set the yellow line slightly above your room's quiet ambient noise level.")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }
@@ -160,14 +160,14 @@ struct MonitorView: View {
 
     private var permissionDeniedCard: some View {
         VStack(spacing: 10) {
-            Label("マイクへのアクセスが必要です", systemImage: "mic.slash.fill")
+            Label("Microphone Access Required", systemImage: "mic.slash.fill")
                 .font(.headline)
                 .foregroundStyle(.orange)
-            Text("「設定」アプリからマイク権限を許可すると、睡眠中の寝言を自動録音できます。")
+            Text("Allow microphone access in Settings to automatically record sleep talk.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
-            Button("設定アプリを開く") {
+            Button("Open Settings") {
                 if let url = URL(string: UIApplication.openSettingsURLString) {
                     UIApplication.shared.open(url)
                 }
@@ -186,7 +186,7 @@ struct MonitorView: View {
                 .font(.title3)
                 .foregroundStyle(.green)
 
-            Text("充電しながらの利用をお勧めします。一晩中マイクを待機させるため、充電ケーブルに接続してご使用ください（画面ロック中も録音できます）。")
+            Text("Charging is recommended. Keep your device plugged in for overnight monitoring (works while screen is locked).")
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -212,7 +212,7 @@ struct MonitorView: View {
         } label: {
             HStack(spacing: 10) {
                 Image(systemName: recorder.state == .idle ? "moon.stars.fill" : "stop.fill")
-                Text(recorder.state == .idle ? "おやすみ録音を開始" : "モニタリングを停止")
+                Text(recorder.state == .idle ? "Start Sleep Recording" : "Stop Monitoring")
                     .fontWeight(.semibold)
             }
             .frame(maxWidth: .infinity)
@@ -233,15 +233,15 @@ struct MonitorView: View {
                         .font(.system(size: 48))
                         .foregroundStyle(recorder.state == .recording ? .red.opacity(0.75) : .indigo.opacity(0.6))
 
-                    Text(recorder.state == .recording ? "寝言を録音中..." : "おやすみ監視中")
+                    Text(recorder.state == .recording ? "Recording sleep talk..." : "Monitoring overnight")
                         .font(.headline)
                         .foregroundStyle(.white.opacity(0.5))
 
-                    Text("検知件数: \(recorder.sessionRecordingCount) 件")
+                    Text("Detected: \(recorder.sessionRecordingCount) clips")
                         .font(.subheadline.monospacedDigit())
                         .foregroundStyle(.white.opacity(0.35))
 
-                    Text("画面をタップして通常表示に戻る")
+                    Text("Tap anywhere to return to normal view")
                         .font(.caption)
                         .foregroundStyle(.white.opacity(0.25))
                         .padding(.top, 24)
@@ -272,19 +272,28 @@ struct MonitorView: View {
 
     private var statusTitle: String {
         switch recorder.state {
-        case .idle: return "待機中"
-        case .monitoring: return "音声を監視中"
-        case .recording: return String(format: "寝言を録音中 (%.1f秒)", recorder.currentClipDuration)
-        case .interrupted: return "一時中断中"
+        case .idle:
+            return String(localized: "Standby")
+        case .monitoring:
+            return String(localized: "Monitoring Audio")
+        case .recording:
+            let durationText = String(format: "%.1f", recorder.currentClipDuration)
+            return String(localized: "Recording (\(durationText)s)")
+        case .interrupted:
+            return String(localized: "Interrupted")
         }
     }
 
     private var statusSubtitle: String {
         switch recorder.state {
-        case .idle: return "就寝前にボタンを押すと、寝言だけを自動で録音します。"
-        case .monitoring: return "しきい値を超える音声を検知すると自動で録音が始まります。"
-        case .recording: return "無音が続くと自動で録音を保存して待機に戻ります。"
-        case .interrupted: return "電話やアラームなどにより一時停止しています。"
+        case .idle:
+            return String(localized: "Tap the button before sleeping to automatically record only sleep talk.")
+        case .monitoring:
+            return String(localized: "Recording starts automatically when sound exceeds the threshold.")
+        case .recording:
+            return String(localized: "Recording stops and saves automatically after silence.")
+        case .interrupted:
+            return String(localized: "Paused due to a phone call or alarm.")
         }
     }
 

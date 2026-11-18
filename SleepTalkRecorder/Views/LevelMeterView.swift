@@ -12,7 +12,7 @@ struct LevelMeterView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text("マイク入力レベル")
+                Text("Mic Input Level")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Spacer()
@@ -55,7 +55,7 @@ struct LevelMeterView: View {
             HStack {
                 Text("-60 dB")
                 Spacer()
-                Text("しきい値: \(Int(thresholdDecibels)) dB")
+                Text("Threshold: \(Int(thresholdDecibels)) dB")
                     .foregroundStyle(.yellow)
                 Spacer()
                 Text("0 dB")

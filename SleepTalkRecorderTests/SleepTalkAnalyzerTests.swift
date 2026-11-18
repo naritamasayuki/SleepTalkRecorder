@@ -59,4 +59,42 @@ final class SleepTalkAnalyzerTests: XCTestCase {
         XCTAssertEqual(result.primaryNeed?.type, .rest)
         XCTAssertTrue(result.primaryNeed?.matchedKeywords.contains("眠い") == true)
     }
+
+    func testPsychologicalNeedDetectsEnglishKeywords() {
+        let items = [
+            RecordingItem(fileName: "en1.m4a", duration: 2.5, peakDecibels: -14.0, transcript: "work tomorrow deadline"),
+            RecordingItem(fileName: "en2.m4a", duration: 2.0, peakDecibels: -18.0, transcript: "late for work")
+        ]
+
+        let result = SleepTalkAnalyzer.analyze(items)
+        XCTAssertEqual(result.primaryNeed?.type, .relief)
+        XCTAssertTrue(result.primaryNeed?.matchedKeywords.contains("work") == true)
+    }
+
+    func testPsychologicalNeedDetectsEnglishRestKeywords() {
+        let items = [
+            RecordingItem(fileName: "1.m4a", duration: 2.0, peakDecibels: -35.0, transcript: "I am so sleepy and tired"),
+            RecordingItem(fileName: "2.m4a", duration: 1.5, peakDecibels: -32.0, transcript: "Need rest and break")
+        ]
+
+        let result = SleepTalkAnalyzer.analyze(items)
+        XCTAssertEqual(result.primaryNeed?.type, .rest)
+        XCTAssertTrue(result.primaryNeed?.matchedKeywords.contains("sleepy") == true)
+        XCTAssertFalse(result.topKeywords.isEmpty)
+        XCTAssertFalse(result.insights.isEmpty)
+    }
+
+    func testRecordingItemFormattedDateAdaptsToLocale() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let date = try XCTUnwrap(calendar.date(from: DateComponents(year: 2026, month: 11, day: 18, hour: 2, minute: 15, second: 30)))
+        let item = RecordingItem(fileName: "a.m4a", createdAt: date, duration: 2.0, peakDecibels: -30.0)
+
+        let jaText = item.formattedDate(locale: Locale(identifier: "ja_JP"))
+        let enText = item.formattedDate(locale: Locale(identifier: "en_US"))
+
+        XCTAssertNotEqual(jaText, enText)
+        XCTAssertTrue(jaText.contains("月") || jaText.contains("/"))
+        XCTAssertTrue(enText.contains("Nov"))
+    }
 }

@@ -18,4 +18,15 @@ final class SpeechTranscriberTests: XCTestCase {
         XCTAssertNil(SpeechTranscriber.sanitizeFileName("   \n\t  "))
         XCTAssertNil(SpeechTranscriber.sanitizeFileName("///:::..."))
     }
+
+    func testPreferredRecognitionLocaleFollowsSystemAndFallbacksToEnglish() {
+        let jaLocale = SpeechTranscriber.resolvedLocale(for: Locale(identifier: "ja-JP"))
+        XCTAssertEqual(jaLocale.language.languageCode?.identifier, "ja")
+
+        let enLocale = SpeechTranscriber.resolvedLocale(for: Locale(identifier: "en-US"))
+        XCTAssertEqual(enLocale.language.languageCode?.identifier, "en")
+
+        let fallbackLocale = SpeechTranscriber.resolvedLocale(for: Locale(identifier: "xx-XX"))
+        XCTAssertEqual(fallbackLocale.identifier, "en-US")
+    }
 }

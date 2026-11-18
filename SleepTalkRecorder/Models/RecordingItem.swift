@@ -41,15 +41,16 @@ struct RecordingItem: Identifiable, Codable, Hashable, Sendable {
         return String(format: "%d:%02d", minutes, seconds)
     }
 
-    /// 録音開始日時を日本語ロケールでフォーマットして返す
+    /// 録音開始日時を端末のロケールに合わせてフォーマットして返す
     var formattedDate: String {
-        Self.dateFormatter.string(from: createdAt)
+        formattedDate(locale: .autoupdatingCurrent)
     }
 
-    private static let dateFormatter: DateFormatter = {
+    /// 指定したロケールで録音開始日時をフォーマットして返す
+    func formattedDate(locale: Locale) -> String {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "ja_JP")
-        formatter.dateFormat = "M月d日(E) HH:mm:ss"
-        return formatter
-    }()
+        formatter.locale = locale
+        formatter.setLocalizedDateFormatFromTemplate("MdEHHmmss")
+        return formatter.string(from: createdAt)
+    }
 }

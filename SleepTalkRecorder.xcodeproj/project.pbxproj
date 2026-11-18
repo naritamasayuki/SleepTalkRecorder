@@ -151,7 +151,7 @@
 				};
 			};
 			buildConfigurationList = 100000000000000000000009 /* Build configuration list for PBXProject "SleepTalkRecorder" */;
-			developmentRegion = ja;
+			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				ja,

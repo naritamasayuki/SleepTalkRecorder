@@ -10,7 +10,7 @@ struct SettingsView: View {
                 Section {
                     VStack(alignment: .leading, spacing: 6) {
                         HStack {
-                            Text("検知しきい値")
+                            Text("Detection Threshold")
                             Spacer()
                             Text("\(Int(recorder.settings.thresholdDecibels)) dB")
                                 .foregroundStyle(.secondary)
@@ -28,9 +28,9 @@ struct SettingsView: View {
 
                     VStack(alignment: .leading, spacing: 6) {
                         HStack {
-                            Text("無音終了までの待機時間")
+                            Text("Silence Timeout")
                             Spacer()
-                            Text(String(format: "%.1f 秒", recorder.settings.silenceTimeoutSeconds))
+                            Text("\(recorder.settings.silenceTimeoutSeconds, specifier: "%.1f") s")
                                 .foregroundStyle(.secondary)
                                 .monospacedDigit()
                         }
@@ -43,9 +43,9 @@ struct SettingsView: View {
 
                     VStack(alignment: .leading, spacing: 6) {
                         HStack {
-                            Text("最小録音時間（ノイズ除外）")
+                            Text("Minimum Recording Duration")
                             Spacer()
-                            Text(String(format: "%.1f 秒", recorder.settings.minimumDurationSeconds))
+                            Text("\(recorder.settings.minimumDurationSeconds, specifier: "%.1f") s")
                                 .foregroundStyle(.secondary)
                                 .monospacedDigit()
                         }
@@ -58,9 +58,9 @@ struct SettingsView: View {
 
                     VStack(alignment: .leading, spacing: 6) {
                         HStack {
-                            Text("プリロール録音（さかのぼり）")
+                            Text("Pre-roll Buffer")
                             Spacer()
-                            Text(String(format: "%.1f 秒", recorder.settings.preRollSeconds))
+                            Text("\(recorder.settings.preRollSeconds, specifier: "%.1f") s")
                                 .foregroundStyle(.secondary)
                                 .monospacedDigit()
                         }
@@ -71,23 +71,23 @@ struct SettingsView: View {
                         )
                     }
                 } header: {
-                    Text("音声検知設定")
+                    Text("Voice Detection Settings")
                 } footer: {
-                    Text("プリロール録音を有効にすると、寝言の話し始めが途切れずに保存されます。")
+                    Text("Pre-roll buffering captures audio just before speech triggers so the beginning of sleep talk is not cut off.")
                 }
 
-                Section("表示・ファイル名設定") {
-                    Toggle("開始時に画面を暗くする（夜間モード）", isOn: $recorder.settings.dimScreenDuringMonitoring)
-                    Toggle("寝言を文字起こししてファイル名にする", isOn: $recorder.settings.transcribeForFileName)
+                Section("Display & Naming Settings") {
+                    Toggle("Dim Screen on Start (Night Mode)", isOn: $recorder.settings.dimScreenDuringMonitoring)
+                    Toggle("Transcribe Sleep Talk for File Name", isOn: $recorder.settings.transcribeForFileName)
                 }
 
                 Section {
-                    Button("初期設定に戻す", role: .destructive) {
+                    Button("Reset to Defaults", role: .destructive) {
                         recorder.settings = .default
                     }
                 }
             }
-            .navigationTitle("設定")
+            .navigationTitle("Settings")
         }
     }
 }

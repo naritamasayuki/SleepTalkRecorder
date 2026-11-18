@@ -29,7 +29,7 @@ struct AdBannerView: View {
                         .background(Color.white.opacity(0.15), in: RoundedRectangle(cornerRadius: 4))
                         .foregroundStyle(.secondary)
 
-                    Text("広告表示エリア（バナー 320×50）")
+                    Text("Ad Space (Banner 320×50)")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -37,7 +37,7 @@ struct AdBannerView: View {
             .frame(maxWidth: .infinity)
             .frame(height: Self.bannerHeight)
             .accessibilityElement(children: .combine)
-            .accessibilityLabel("広告エリア")
+            .accessibilityLabel(Text("Advertisement Area"))
         }
     }
 }

@@ -3,14 +3,32 @@ import NaturalLanguage
 
 /// 寝言データから推定される深層心理の要求カテゴリ
 enum PsychologicalNeedType: String, CaseIterable, Identifiable, Sendable {
-    case rest = "休息・回復の要求"
-    case relief = "緊張からの解放要求"
-    case connection = "承認・つながりの要求"
-    case safety = "安心・安全の要求"
-    case freedom = "自由・楽しみの要求"
-    case clarity = "思考・記憶の整理"
+    case rest = "rest"
+    case relief = "relief"
+    case connection = "connection"
+    case safety = "safety"
+    case freedom = "freedom"
+    case clarity = "clarity"
 
     var id: String { rawValue }
+
+    /// ローカライズされた表示用タイトル
+    var localizedTitle: String {
+        switch self {
+        case .rest:
+            return String(localized: "Need for Rest & Recovery")
+        case .relief:
+            return String(localized: "Need for Stress Relief")
+        case .connection:
+            return String(localized: "Need for Connection & Approval")
+        case .safety:
+            return String(localized: "Need for Safety & Comfort")
+        case .freedom:
+            return String(localized: "Need for Freedom & Joy")
+        case .clarity:
+            return String(localized: "Mental & Memory Organization")
+        }
+    }
 
     var symbolName: String {
         switch self {
@@ -26,34 +44,34 @@ enum PsychologicalNeedType: String, CaseIterable, Identifiable, Sendable {
     var summaryDescription: String {
         switch self {
         case .rest:
-            return "心身が十分な睡眠とリラックスを強く求めています。疲労が蓄積しているサインかもしれません。"
+            return String(localized: "Your mind and body strongly crave sufficient sleep and relaxation. Fatigue may be accumulating.")
         case .relief:
-            return "日中の責任感や「やらなければ」という緊張から解放されたいという無意識の表れです。"
+            return String(localized: "This reflects an unconscious desire to release daytime responsibilities and pressure.")
         case .connection:
-            return "誰かに気持ちを分かってもらいたい、つながりや共感を得たいという要求が隠れています。"
+            return String(localized: "There may be an underlying wish to be understood, supported, and connected with others.")
         case .safety:
-            return "小さな不安やストレスを感じており、心から安心できる落ち着いた環境を求めています。"
+            return String(localized: "Mild anxiety or stress may be present, leading you to seek a calm and reassuring environment.")
         case .freedom:
-            return "日常の枠から離れて、楽しさや新しい刺激・開放感を味わいたいという欲求が高まっています。"
+            return String(localized: "Your desire for fun, fresh stimulation, and stepping away from daily routines is rising.")
         case .clarity:
-            return "日中の出来事や思考を、脳が睡眠中に静かに整理・定着させている安定した状態です。"
+            return String(localized: "Your brain is calmly organizing and consolidating daytime memories and thoughts during sleep.")
         }
     }
 
     var careAdvice: String {
         switch self {
         case .rest:
-            return "今夜はいつもより30分早く照明を落とし、体を温めて深い休息をとるのがおすすめです。"
+            return String(localized: "Try dimming the lights 30 minutes earlier tonight and warming up your body for deeper rest.")
         case .relief:
-            return "寝る前に気になっているタスクを紙に書き出して頭から切り離すと、緊張が和らぎます。"
+            return String(localized: "Writing down lingering tasks before bed can help clear your mind and ease tension.")
         case .connection:
-            return "信頼できる人や家族と少し会話したり、安心できる音楽を聴いてから眠ると心が満たされます。"
+            return String(localized: "Chatting with someone you trust or listening to soothing music before sleep may help you feel grounded.")
         case .safety:
-            return "部屋の温度や寝具を整え、深呼吸を数回行って安心感を感じながら眠りにつきましょう。"
+            return String(localized: "Adjust your room temperature and bedding, then take a few slow deep breaths before drifting off.")
         case .freedom:
-            return "週末に少しだけ普段と違う場所へ出かけたり、好きな趣味の時間を確保してみてください。"
+            return String(localized: "Consider visiting a new place or setting aside time for a favorite hobby this weekend.")
         case .clarity:
-            return "現在の睡眠リズムは良好です。このまま規則正しい就寝時間を保ちましょう。"
+            return String(localized: "Your current sleep rhythm looks balanced. Keep maintaining a consistent bedtime.")
         }
     }
 }
@@ -107,11 +125,26 @@ struct SleepTalkAnalysis: Equatable, Sendable {
 /// 録音された寝言データから深層心理の要求・傾向・時間帯分布を分析するサービス
 enum SleepTalkAnalyzer {
     private static let keywordDictionary: [PsychologicalNeedType: [String]] = [
-        .rest: ["眠い", "寝", "疲れ", "休み", "休みたい", "しんどい", "だるい", "無理", "帰りたい", "もう", "重い"],
-        .relief: ["仕事", "明日", "時間", "遅刻", "やらなきゃ", "ダメ", "急いで", "確認", "終わらない", "お金", "会社", "学校"],
-        .connection: ["ありがとう", "ごめん", "好き", "一緒", "寂しい", "誰", "待って", "聞いて", "電話", "会いたい"],
-        .safety: ["怖い", "やめ", "助けて", "痛い", "暗い", "落ちる", "危ない", "嫌", "逃げ", "どこ", "違う"],
-        .freedom: ["行きたい", "欲しい", "食べる", "美味しい", "旅行", "海", "空", "楽しい", "遊ぶ", "自由", "買い"]
+        .rest: [
+            "眠い", "寝", "疲れ", "休み", "休みたい", "しんどい", "だるい", "無理", "帰りたい", "もう", "重い",
+            "sleepy", "sleep", "tired", "exhausted", "rest", "break", "heavy", "bed", "nap"
+        ],
+        .relief: [
+            "仕事", "明日", "時間", "遅刻", "やらなきゃ", "ダメ", "急いで", "確認", "終わらない", "お金", "会社", "学校",
+            "work", "tomorrow", "time", "late", "hurry", "check", "finish", "money", "office", "school", "deadline", "busy"
+        ],
+        .connection: [
+            "ありがとう", "ごめん", "好き", "一緒", "寂しい", "誰", "待って", "聞いて", "電話", "会いたい",
+            "thank", "sorry", "love", "together", "lonely", "who", "wait", "listen", "call", "miss"
+        ],
+        .safety: [
+            "怖い", "やめ", "助けて", "痛い", "暗い", "落ちる", "危ない", "嫌", "逃げ", "どこ", "違う",
+            "scary", "afraid", "stop", "hurt", "pain", "dark", "fall", "danger", "hate", "run", "where", "wrong"
+        ],
+        .freedom: [
+            "行きたい", "欲しい", "食べる", "美味しい", "旅行", "海", "空", "楽しい", "遊ぶ", "自由", "買い",
+            "go", "want", "eat", "delicious", "travel", "sea", "sky", "fun", "play", "free", "buy", "happy"
+        ]
     ]
 
     /// 録音リストを集計・解析して分析結果を返す
@@ -275,7 +308,7 @@ enum SleepTalkAnalyzer {
             }
     }
 
-    /// NaturalLanguage の単語トークナイザを使って日本語キーワードの出現頻度を集計する
+    /// NaturalLanguage の単語トークナイザを使ってキーワードの出現頻度を集計する
     static func extractTopKeywords(from transcripts: [String], limit: Int = 8) -> [SleepTalkAnalysis.KeywordCount] {
         guard !transcripts.isEmpty else { return [] }
 
@@ -319,27 +352,27 @@ enum SleepTalkAnalyzer {
         var result: [String] = []
 
         if let primaryNeed {
-            result.append("深層心理では「\(primaryNeed.type.rawValue)」が最も強く表れています。")
+            result.append(String(localized: "Your subconscious most strongly expresses: \(primaryNeed.type.localizedTitle)."))
         }
 
         if let peakHour {
-            result.append("最も寝言が多い時間帯は \(peakHour)時台 です。")
+            result.append(String(localized: "Sleep talk occurs most frequently around \(peakHour):00."))
         }
 
         if averageDuration < 2.5 {
-            result.append(String(format: "平均 %.1f秒 の短い寝言・つぶやきが多い傾向があります。", averageDuration))
+            result.append(String(localized: "Short murmurs averaging \(String(format: "%.1f", averageDuration)) seconds are most common."))
         } else {
-            result.append(String(format: "平均 %.1f秒 と比較的長めの発話が記録されています。", averageDuration))
+            result.append(String(localized: "Relatively longer utterances averaging \(String(format: "%.1f", averageDuration)) seconds were recorded."))
         }
 
         if let maxDb = maxPeakDecibels, volumeBreakdown.loudCount > 0 {
-            result.append(String(format: "大きめの寝言（-15 dB以上）が %d件 ありました（最大 %.0f dB）。", volumeBreakdown.loudCount, maxDb))
+            result.append(String(localized: "There were \(volumeBreakdown.loudCount) loud sleep-talk clips (-15 dB or above, max \(String(format: "%.0f", maxDb)) dB)."))
         } else {
-            result.append("全体的に落ち着いた声量（ささやき〜通常レベル）の寝言が中心です。")
+            result.append(String(localized: "Overall, your sleep talk stays at calm levels (whisper to normal)."))
         }
 
         if let top = topKeywords.first {
-            result.append("よく記録された言葉は「\(top.word)」です（\(top.count)回）。")
+            result.append(String(localized: "Your most frequently recorded word is \"\(top.word)\" (\(top.count) times)."))
         }
 
         return result

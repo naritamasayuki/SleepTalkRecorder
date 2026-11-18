@@ -13,16 +13,16 @@ struct RecordingsListView: View {
             Group {
                 if store.recordings.isEmpty {
                     ContentUnavailableView(
-                        "録音された寝言はありません",
+                        "No Recordings Yet",
                         systemImage: "waveform.slash",
-                        description: Text("おやすみモニターを開始すると、検知された寝言がここに保存されます。")
+                        description: Text("Start the Sleep Monitor to automatically save detected sleep talk here.")
                     )
                 } else {
                     List {
                         if isMonitoring {
                             Section {
                                 Label(
-                                    "モニタリング中は音声の再生ができません。再生するにはモニターを停止してください。",
+                                    "Playback is disabled while monitoring. Stop monitoring to play recordings.",
                                     systemImage: "info.circle"
                                 )
                                 .font(.caption)
@@ -46,11 +46,11 @@ struct RecordingsListView: View {
                     }
                 }
             }
-            .navigationTitle("録音履歴 (\(store.recordings.count))")
+            .navigationTitle("Recordings (\(store.recordings.count))")
             .toolbar {
                 if !store.recordings.isEmpty {
                     ToolbarItem(placement: .topBarTrailing) {
-                        Button("すべて削除", role: .destructive) {
+                        Button("Delete All", role: .destructive) {
                             showDeleteAllConfirm = true
                         }
                         .foregroundStyle(.red)
@@ -58,20 +58,20 @@ struct RecordingsListView: View {
                 }
             }
             .confirmationDialog(
-                "すべての録音を削除しますか？",
+                "Delete all recordings?",
                 isPresented: $showDeleteAllConfirm,
                 titleVisibility: .visible
             ) {
-                Button("すべて削除", role: .destructive) {
+                Button("Delete All", role: .destructive) {
                     playbackManager.stop()
                     store.deleteAll()
                 }
-                Button("キャンセル", role: .cancel) {}
+                Button("Cancel", role: .cancel) {}
             } message: {
-                Text("この操作は取り消せません。")
+                Text("This action cannot be undone.")
             }
             .alert(
-                "再生エラー",
+                "Playback Error",
                 isPresented: Binding(
                     get: { playbackManager.errorMessage != nil },
                     set: { if !$0 { playbackManager.errorMessage = nil } }
