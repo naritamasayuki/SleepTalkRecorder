@@ -24,6 +24,8 @@ SleepTalkRecorder/
 │   ├── AudioRingBuffer.swift       # プリロール用リングバッファ
 │   ├── VoiceActivityDetector.swift # 音声検知ステートマシン・dBFS計算
 │   ├── SleepAudioRecorder.swift    # AVAudioEngineによる自動録音制御
+│   ├── SpeechTranscriber.swift     # SFSpeechRecognizerによる文字起こし
+│   ├── SleepTalkAnalyzer.swift     # 時間帯・音量・頻出ワード分析
 │   ├── AudioPlaybackManager.swift  # AVAudioPlayerによる再生管理
 │   └── RecordingStore.swift        # 録音ファイル・JSONメタデータ永続化
 └── Views/
@@ -32,6 +34,7 @@ SleepTalkRecorder/
     ├── MonitorView.swift           # おやすみモニター画面
     ├── LevelMeterView.swift        # 音量レベル・しきい値メーター
     ├── RecordingsListView.swift    # 録音履歴一覧・再生画面
+    ├── AnalysisView.swift          # 寝言分析グラフ・レポート画面
     └── SettingsView.swift          # 検知パラメータ設定画面
 ```
 

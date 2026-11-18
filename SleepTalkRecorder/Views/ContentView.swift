@@ -31,6 +31,11 @@ struct ContentView: View {
                 }
                 .badge(store.recordings.count)
 
+                AnalysisView(store: store)
+                    .tabItem {
+                        Label("分析", systemImage: "chart.bar.xaxis")
+                    }
+
                 SettingsView(recorder: recorder)
                     .tabItem {
                         Label("設定", systemImage: "gearshape.fill")
