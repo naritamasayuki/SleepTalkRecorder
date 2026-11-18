@@ -20,6 +20,7 @@ struct MonitorView: View {
                         if recorder.permissionState == .denied {
                             permissionDeniedCard
                         }
+                        chargingTipBanner
                         controlButton
                     }
                     .padding()
@@ -177,6 +178,22 @@ struct MonitorView: View {
         .padding()
         .frame(maxWidth: .infinity)
         .background(Color.orange.opacity(0.12), in: RoundedRectangle(cornerRadius: 16))
+    }
+
+    private var chargingTipBanner: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "battery.100.bolt")
+                .font(.title3)
+                .foregroundStyle(.green)
+
+            Text("充電しながらの利用をお勧めします。一晩中マイクを待機させるため、充電ケーブルに接続してご使用ください（画面ロック中も録音できます）。")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .background(Color.green.opacity(0.1), in: RoundedRectangle(cornerRadius: 12))
     }
 
     private var controlButton: some View {
