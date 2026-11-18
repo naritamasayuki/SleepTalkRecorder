@@ -192,10 +192,7 @@ final class SleepAudioRecorder {
             }
         )
 
-        inputNode.installTap(onBus: 0, bufferSize: 4096, format: inputFormat) { buffer, _ in
-            guard let copied = buffer.copyPCMBuffer() else { return }
-            streamProcessor.enqueue(SendablePCMBuffer(buffer: copied))
-        }
+        streamProcessor.installTap(on: inputNode, format: inputFormat)
 
         engine.prepare()
         try engine.start()
@@ -346,6 +343,14 @@ private final class AudioStreamProcessor: @unchecked Sendable {
         self.onLevelUpdate = onLevelUpdate
         self.onRecordingSaved = onRecordingSaved
         self.onError = onError
+    }
+
+    /// オーディオスレッドから呼ばれるタップブロックを非MainActorコンテキストで登録する
+    func installTap(on inputNode: AVAudioInputNode, format: AVAudioFormat) {
+        inputNode.installTap(onBus: 0, bufferSize: 4096, format: format) { [weak self] buffer, _ in
+            guard let self, let copied = buffer.copyPCMBuffer() else { return }
+            self.enqueue(SendablePCMBuffer(buffer: copied))
+        }
     }
 
     func updateSettings(_ newSettings: RecorderSettings) {
