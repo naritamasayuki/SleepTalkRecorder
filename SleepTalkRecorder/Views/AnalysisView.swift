@@ -21,6 +21,9 @@ struct AnalysisView: View {
                 } else {
                     ScrollView {
                         VStack(spacing: 20) {
+                            if let primaryNeed = analysis.primaryNeed {
+                                psychologyHeroCard(primaryNeed, allNeeds: analysis.psychologicalNeeds)
+                            }
                             summaryGrid(analysis)
                             hourlyChartCard(analysis)
                             volumeCard(analysis)
@@ -35,6 +38,107 @@ struct AnalysisView: View {
             }
             .navigationTitle("寝言分析")
         }
+    }
+
+    private func psychologyHeroCard(_ primary: PsychologicalNeedScore, allNeeds: [PsychologicalNeedScore]) -> some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(spacing: 12) {
+                ZStack {
+                    Circle()
+                        .fill(Color.indigo.opacity(0.3))
+                        .frame(width: 48, height: 48)
+                    Image(systemName: primary.type.symbolName)
+                        .font(.title3)
+                        .foregroundStyle(.cyan)
+                }
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("深層心理の要求（推定）")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text(primary.type.rawValue)
+                        .font(.title3.bold())
+                        .foregroundStyle(.white)
+                }
+
+                Spacer()
+
+                Text("\(Int((primary.ratio * 100).rounded()))%")
+                    .font(.headline.monospacedDigit())
+                    .foregroundStyle(.cyan)
+            }
+
+            Text(primary.type.summaryDescription)
+                .font(.subheadline)
+                .foregroundStyle(.primary.opacity(0.9))
+
+            if !primary.matchedKeywords.isEmpty {
+                HStack(spacing: 6) {
+                    Text("根拠ワード:")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                    ForEach(primary.matchedKeywords.prefix(4), id: \.self) { word in
+                        Text(word)
+                            .font(.caption2.bold())
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 3)
+                            .background(Color.cyan.opacity(0.18), in: Capsule())
+                            .foregroundStyle(.cyan)
+                    }
+                }
+            }
+
+            VStack(alignment: .leading, spacing: 8) {
+                Text("心理ニーズのバランス")
+                    .font(.caption.bold())
+                    .foregroundStyle(.secondary)
+
+                ForEach(allNeeds.prefix(3)) { need in
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack {
+                            Text(need.type.rawValue)
+                                .font(.caption)
+                            Spacer()
+                            Text("\(Int((need.ratio * 100).rounded()))%")
+                                .font(.caption.monospacedDigit())
+                                .foregroundStyle(.secondary)
+                        }
+                        GeometryReader { geo in
+                            ZStack(alignment: .leading) {
+                                Capsule().fill(Color.white.opacity(0.1))
+                                Capsule()
+                                    .fill(need.id == primary.id ? Color.cyan : Color.indigo.opacity(0.7))
+                                    .frame(width: max(4, geo.size.width * need.ratio))
+                            }
+                        }
+                        .frame(height: 6)
+                    }
+                }
+            }
+            .padding(.top, 4)
+
+            HStack(alignment: .top, spacing: 8) {
+                Image(systemName: "lightbulb.fill")
+                    .foregroundStyle(.yellow)
+                    .font(.caption)
+                    .padding(.top, 2)
+                Text(primary.type.careAdvice)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(10)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.yellow.opacity(0.08), in: RoundedRectangle(cornerRadius: 10))
+        }
+        .padding()
+        .background(
+            LinearGradient(
+                colors: [Color.indigo.opacity(0.25), Color.white.opacity(0.06)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            ),
+            in: RoundedRectangle(cornerRadius: 18)
+        )
     }
 
     private func summaryGrid(_ data: SleepTalkAnalysis) -> some View {

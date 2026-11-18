@@ -46,5 +46,17 @@ final class SleepTalkAnalyzerTests: XCTestCase {
         XCTAssertEqual(result.topKeywords.first?.word, "明日")
         XCTAssertEqual(result.topKeywords.first?.count, 2)
         XCTAssertFalse(result.insights.isEmpty)
+        XCTAssertEqual(result.primaryNeed?.type, .relief)
+    }
+
+    func testPsychologicalNeedDetectsRestRequest() {
+        let items = [
+            RecordingItem(fileName: "1.m4a", duration: 2.0, peakDecibels: -35.0, transcript: "もう眠い、疲れた、休みたい"),
+            RecordingItem(fileName: "2.m4a", duration: 1.5, peakDecibels: -32.0, transcript: "帰りたいたいへんだ")
+        ]
+
+        let result = SleepTalkAnalyzer.analyze(items)
+        XCTAssertEqual(result.primaryNeed?.type, .rest)
+        XCTAssertTrue(result.primaryNeed?.matchedKeywords.contains("眠い") == true)
     }
 }
