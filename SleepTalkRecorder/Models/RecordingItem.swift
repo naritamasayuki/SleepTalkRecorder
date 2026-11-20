@@ -50,7 +50,7 @@ struct RecordingItem: Identifiable, Codable, Hashable, Sendable {
     func formattedDate(locale: Locale) -> String {
         let formatter = DateFormatter()
         formatter.locale = locale
-        formatter.setLocalizedDateFormatFromTemplate("MdEHHmmss")
+        formatter.setLocalizedDateFormatFromTemplate("MMMdEHHmmss")
         return formatter.string(from: createdAt)
     }
 }
