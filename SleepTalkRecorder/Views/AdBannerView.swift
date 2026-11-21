@@ -14,6 +14,15 @@ struct AdBannerView: View {
     }
 
     var body: some View {
+        // 本番（Release）ビルドで実広告SDKが未導入の場合は、App Store審査ガイドライン2.1対策として枠を非表示にする
+        #if DEBUG
+        bannerContent
+        #else
+        EmptyView()
+        #endif
+    }
+
+    private var bannerContent: some View {
         VStack(spacing: 0) {
             Divider()
                 .overlay(Color.white.opacity(0.12))
