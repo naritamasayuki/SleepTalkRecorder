@@ -289,6 +289,16 @@
         }
       }
     },
+    "Attaches app version, iOS version, and device model to help diagnose bugs faster.": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "アプリバージョン・iOSバージョン・端末モデルを本文に自動添付します。"
+          }
+        }
+      }
+    },
     "Audio file could not be found.": {
       "localizations": {
         "en": {
@@ -321,6 +331,16 @@
         }
       }
     },
+    "Bug Report": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "バグ報告"
+          }
+        }
+      }
+    },
     "Cancel": {
       "localizations": {
         "en": {
@@ -333,6 +353,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "キャンセル"
+          }
+        }
+      }
+    },
+    "Category": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "種別"
           }
         }
       }
@@ -461,6 +491,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "すべての録音を削除しますか？"
+          }
+        }
+      }
+    },
+    "Details": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "内容"
           }
         }
       }
@@ -705,6 +745,46 @@
         }
       }
     },
+    "Feature Request": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "機能要望"
+          }
+        }
+      }
+    },
+    "Feedback": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "フィードバック"
+          }
+        }
+      }
+    },
+    "Feedback & Bug Report": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ご要望・バグ報告"
+          }
+        }
+      }
+    },
+    "Feedback Type": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "お問い合わせ種別"
+          }
+        }
+      }
+    },
     "Frequent Words (Transcribed)": {
       "localizations": {
         "en": {
@@ -733,6 +813,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "時"
+          }
+        }
+      }
+    },
+    "Include Device & App Info": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "端末情報・アプリバージョンを添付する"
           }
         }
       }
@@ -797,6 +887,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "大きめ"
+          }
+        }
+      }
+    },
+    "Mail app is unavailable. Your message has been copied to the clipboard—please send it to %@.": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "メールアプリを起動できませんでした。入力内容をクリップボードにコピーしましたので、%@ 宛にお送りください。"
           }
         }
       }
@@ -1153,6 +1253,16 @@
         }
       }
     },
+    "Other Feedback": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "その他"
+          }
+        }
+      }
+    },
     "Overall, your sleep talk stays at calm levels (whisper to normal).": {
       "localizations": {
         "en": {
@@ -1277,6 +1387,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "プリロール録音を有効にすると、寝言の話し始めが途切れずに保存されます。"
+          }
+        }
+      }
+    },
+    "Privacy Policy": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "プライバシーポリシー"
           }
         }
       }
@@ -1409,6 +1529,16 @@
         }
       }
     },
+    "Report on GitHub Issues": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GitHub Issues で報告する"
+          }
+        }
+      }
+    },
     "Reset to Defaults": {
       "localizations": {
         "en": {
@@ -1421,6 +1551,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "初期設定に戻す"
+          }
+        }
+      }
+    },
+    "Send Feedback or Bug Report": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ご要望・バグを報告する"
+          }
+        }
+      }
+    },
+    "Send via Mail": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "メールで送信する"
           }
         }
       }
@@ -1633,6 +1783,16 @@
         }
       }
     },
+    "Support & Feedback": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "サポート・ご要望"
+          }
+        }
+      }
+    },
     "Tap anywhere to return to normal view": {
       "localizations": {
         "en": {
@@ -1661,6 +1821,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "就寝前にボタンを押すと、寝言だけを自動で録音します。"
+          }
+        }
+      }
+    },
+    "Tell us about any issues you encountered or features you would like to see.": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "不具合の状況や、追加してほしい機能などをお気軽にお書きください。"
           }
         }
       }
@@ -1933,6 +2103,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "日常の枠から離れて、楽しさや新しい刺激・開放感を味わいたいという欲求が高まっています。"
+          }
+        }
+      }
+    },
+    "Your feedback directly helps us improve the app.": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "いただいたご意見は今後のアップデート改善に活かします。"
           }
         }
       }

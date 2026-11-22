@@ -81,6 +81,20 @@ struct SettingsView: View {
                     Toggle("Transcribe Sleep Talk for File Name", isOn: $recorder.settings.transcribeForFileName)
                 }
 
+                Section("Support & Feedback") {
+                    NavigationLink {
+                        FeedbackFormView()
+                    } label: {
+                        Label("Send Feedback or Bug Report", systemImage: "bubble.left.and.exclamationmark.bubble.right.fill")
+                    }
+
+                    if let privacyURL = URL(string: "https://naritamasayuki.github.io/SleepTalkRecorder/privacy.html") {
+                        Link(destination: privacyURL) {
+                            Label("Privacy Policy", systemImage: "hand.raised.fill")
+                        }
+                    }
+                }
+
                 Section {
                     Button("Reset to Defaults", role: .destructive) {
                         recorder.settings = .default
