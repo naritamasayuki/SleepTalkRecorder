@@ -69,6 +69,23 @@
           }
         }
       }
+    },
+    "NSUserTrackingUsageDescription" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This identifier will be used to deliver personalized ads to you."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "お客様に関連性の高い広告を表示するためにトラッキングを許可してください。"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

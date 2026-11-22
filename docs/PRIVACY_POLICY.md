@@ -17,7 +17,10 @@
 本アプリは、録音された音声データ、文字起こしテキスト、および深層心理分析の結果を開発者のサーバーや第三者へ送信・共有しません。
 （※ 音声認識に Apple の標準音声認識機能を使用する場合、OS の仕様により Apple のサーバーで音声が処理されることがあります。オンデバイス認識が利用可能な環境では端末内で処理されます。）
 
-### 3. データの削除
+### 3. 広告配信（Google AdMob）について
+本アプリでは、広告配信のために Google LLC が提供する Google AdMob を利用しています。広告配信事業者は、適切な広告を表示するために端末識別子等の情報を自動的に取得する場合があります。詳細は [Google の広告に関するポリシー](https://policies.google.com/technologies/ads) をご確認ください。
+
+### 4. データの削除
 録音された音声データおよび分析履歴は、アプリ内の「録音履歴」画面からいつでも個別に、または一括で削除できます。アプリをアンインストールすると、端末内のすべてのデータが完全に削除されます。
 
 ### 4. お問い合わせ
@@ -39,7 +42,10 @@ The App uses your device's microphone and speech recognition to provide its feat
 The App does not transmit, upload, or share your recorded audio, transcriptions, or psychological analysis results to developer servers or third parties.
 *(Note: When using Apple's standard Speech Recognition framework, audio may be processed by Apple according to iOS system settings if on-device recognition is unavailable.)*
 
-### 3. Data Deletion
+### 3. Advertising (Google AdMob)
+The App uses Google AdMob (Google LLC) to serve banner ads. AdMob may collect device identifiers and usage data in accordance with [Google's Advertising Policy](https://policies.google.com/technologies/ads).
+
+### 4. Data Deletion
 You can delete individual clips or all recordings at any time from the "Recordings" tab. Uninstalling the App removes all stored data from your device.
 
 ### 4. Contact
