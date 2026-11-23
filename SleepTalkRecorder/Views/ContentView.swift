@@ -16,10 +16,14 @@ struct ContentView: View {
     var body: some View {
         VStack(spacing: 0) {
             TabView {
-                MonitorView(recorder: recorder, playbackManager: playbackManager)
-                    .tabItem {
-                        Label("Monitor", systemImage: "moon.stars.fill")
-                    }
+                MonitorView(
+                    recorder: recorder,
+                    playbackManager: playbackManager,
+                    totalRecordingsCount: store.recordings.count
+                )
+                .tabItem {
+                    Label("Monitor", systemImage: "moon.stars.fill")
+                }
 
                 RecordingsListView(
                     store: store,

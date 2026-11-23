@@ -341,6 +341,16 @@
         }
       }
     },
+    "Bedtime Reminder": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "就寝リマインダー"
+          }
+        }
+      }
+    },
     "Blocks ambient noise for uninterrupted rest": {
       "localizations": {
         "ja": {
@@ -533,6 +543,16 @@
         }
       }
     },
+    "Daily Bedtime Reminder": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "毎日の就寝リマインダー"
+          }
+        }
+      }
+    },
     "Delete All": {
       "localizations": {
         "en": {
@@ -571,6 +591,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "内容"
+          }
+        }
+      }
+    },
+    "Detected %lld sleep-talk clip(s) during this session. Check the Recordings and Analysis tabs!": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "今回の睡眠で %lld 件の寝言を検知しました。「録音履歴」や「分析」タブでチェックしてみましょう！"
           }
         }
       }
@@ -907,6 +937,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "目元をじんわり温めて深い眠りをサポート"
+          }
+        }
+      }
+    },
+    "Good Morning!": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "おはようございます！"
           }
         }
       }
@@ -1335,6 +1375,16 @@
         }
       }
     },
+    "Notifications are disabled. Enable them in the Settings app to receive bedtime reminders.": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "通知が無効になっています。リマインダーを受け取るには「設定」アプリで通知を許可してください。"
+          }
+        }
+      }
+    },
     "OK": {
       "localizations": {
         "en": {
@@ -1495,6 +1545,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "モニタリング中は音声の再生ができません。再生するにはモニターを停止してください。"
+          }
+        }
+      }
+    },
+    "Plug in your charger and start recording tonight's sleep talk.": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "充電ケーブルを接続して、今夜の寝言自動録音を開始しましょう。"
           }
         }
       }
@@ -1699,6 +1759,16 @@
         }
       }
     },
+    "Reminder Time": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "通知時刻"
+          }
+        }
+      }
+    },
     "Report on GitHub Issues": {
       "localizations": {
         "ja": {
@@ -1745,6 +1815,16 @@
         }
       }
     },
+    "Sends a daily notification so you don't forget to start sleep monitoring before bed.": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "寝る前の録音開始忘れを防ぐため、毎日指定した時刻に通知します。"
+          }
+        }
+      }
+    },
     "Set the yellow line slightly above your room's quiet ambient noise level.": {
       "localizations": {
         "en": {
@@ -1773,6 +1853,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "設定"
+          }
+        }
+      }
+    },
+    "Share Report Card": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "診断カードをシェア"
           }
         }
       }
@@ -1879,6 +1969,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "最も寝言が多い時間帯は %lld時台 です。"
+          }
+        }
+      }
+    },
+    "SleepTalk": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "寝言"
+          }
+        }
+      }
+    },
+    "SleepTalk Psychology Report": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "寝言・深層心理レポート"
           }
         }
       }
@@ -2121,6 +2231,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "しきい値: %lld dB"
+          }
+        }
+      }
+    },
+    "Time for Sleep Monitor": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "おやすみモニターの時間です"
           }
         }
       }

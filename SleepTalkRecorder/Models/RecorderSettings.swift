@@ -1,6 +1,6 @@
 import Foundation
 
-/// 自動録音の検知パラメータおよび画面動作の設定を保持するモデル
+/// 自動録音の検知パラメータおよび画面・通知動作の設定を保持するモデル
 struct RecorderSettings: Equatable, Codable, Sendable {
     /// 録音を開始する音量しきい値（dBFS: -60.0 〜 -5.0）
     var thresholdDecibels: Float
@@ -14,6 +14,12 @@ struct RecorderSettings: Equatable, Codable, Sendable {
     var dimScreenDuringMonitoring: Bool
     /// 録音後に寝言を文字起こしして音声ファイル名に設定するかどうか
     var transcribeForFileName: Bool
+    /// 毎日の就寝リマインダー通知を有効にするかどうか
+    var bedtimeReminderEnabled: Bool
+    /// 就寝リマインダー通知の時（0〜23）
+    var bedtimeReminderHour: Int
+    /// 就寝リマインダー通知の分（0〜59）
+    var bedtimeReminderMinute: Int
 
     static let `default` = RecorderSettings(
         thresholdDecibels: -35.0,
@@ -21,7 +27,10 @@ struct RecorderSettings: Equatable, Codable, Sendable {
         minimumDurationSeconds: 0.8,
         preRollSeconds: 1.5,
         dimScreenDuringMonitoring: true,
-        transcribeForFileName: true
+        transcribeForFileName: true,
+        bedtimeReminderEnabled: false,
+        bedtimeReminderHour: 23,
+        bedtimeReminderMinute: 0
     )
 
     init(
@@ -30,7 +39,10 @@ struct RecorderSettings: Equatable, Codable, Sendable {
         minimumDurationSeconds: TimeInterval,
         preRollSeconds: TimeInterval,
         dimScreenDuringMonitoring: Bool,
-        transcribeForFileName: Bool = true
+        transcribeForFileName: Bool = true,
+        bedtimeReminderEnabled: Bool = false,
+        bedtimeReminderHour: Int = 23,
+        bedtimeReminderMinute: Int = 0
     ) {
         self.thresholdDecibels = thresholdDecibels
         self.silenceTimeoutSeconds = silenceTimeoutSeconds
@@ -38,6 +50,9 @@ struct RecorderSettings: Equatable, Codable, Sendable {
         self.preRollSeconds = preRollSeconds
         self.dimScreenDuringMonitoring = dimScreenDuringMonitoring
         self.transcribeForFileName = transcribeForFileName
+        self.bedtimeReminderEnabled = bedtimeReminderEnabled
+        self.bedtimeReminderHour = bedtimeReminderHour
+        self.bedtimeReminderMinute = bedtimeReminderMinute
     }
 
     init(from decoder: Decoder) throws {
@@ -49,6 +64,9 @@ struct RecorderSettings: Equatable, Codable, Sendable {
         preRollSeconds = try container.decodeIfPresent(TimeInterval.self, forKey: .preRollSeconds) ?? defaults.preRollSeconds
         dimScreenDuringMonitoring = try container.decodeIfPresent(Bool.self, forKey: .dimScreenDuringMonitoring) ?? defaults.dimScreenDuringMonitoring
         transcribeForFileName = try container.decodeIfPresent(Bool.self, forKey: .transcribeForFileName) ?? defaults.transcribeForFileName
+        bedtimeReminderEnabled = try container.decodeIfPresent(Bool.self, forKey: .bedtimeReminderEnabled) ?? defaults.bedtimeReminderEnabled
+        bedtimeReminderHour = try container.decodeIfPresent(Int.self, forKey: .bedtimeReminderHour) ?? defaults.bedtimeReminderHour
+        bedtimeReminderMinute = try container.decodeIfPresent(Int.self, forKey: .bedtimeReminderMinute) ?? defaults.bedtimeReminderMinute
     }
 
     private static let storageKey = "com.sleeptalkrecorder.settings"
@@ -77,7 +95,10 @@ struct RecorderSettings: Equatable, Codable, Sendable {
             minimumDurationSeconds: min(max(minimumDurationSeconds, 0.2), 5.0),
             preRollSeconds: min(max(preRollSeconds, 0.0), 3.0),
             dimScreenDuringMonitoring: dimScreenDuringMonitoring,
-            transcribeForFileName: transcribeForFileName
+            transcribeForFileName: transcribeForFileName,
+            bedtimeReminderEnabled: bedtimeReminderEnabled,
+            bedtimeReminderHour: min(max(bedtimeReminderHour, 0), 23),
+            bedtimeReminderMinute: min(max(bedtimeReminderMinute, 0), 59)
         )
     }
 }

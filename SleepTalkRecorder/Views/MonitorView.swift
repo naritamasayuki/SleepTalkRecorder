@@ -1,11 +1,16 @@
+import StoreKit
 import SwiftUI
 import UIKit
 
 /// 睡眠中の自動録音待機・状態表示・制御を行うメインモニター画面
 struct MonitorView: View {
+    @Environment(\.requestReview) private var requestReview
+
     @Bindable var recorder: SleepAudioRecorder
     var playbackManager: AudioPlaybackManager
+    var totalRecordingsCount: Int
     @State private var isNightDimmed = false
+    @State private var sessionSummaryCount: Int?
 
     var body: some View {
         NavigationStack {
@@ -53,6 +58,24 @@ struct MonitorView: View {
                 Button("OK", role: .cancel) {}
             } message: {
                 Text(recorder.errorMessage ?? "")
+            }
+            .alert(
+                "Good Morning!",
+                isPresented: Binding(
+                    get: { sessionSummaryCount != nil },
+                    set: { if !$0 { sessionSummaryCount = nil } }
+                )
+            ) {
+                Button("OK", role: .cancel) {
+                    if ReviewPromptManager.shouldRequestReview(totalRecordingsCount: totalRecordingsCount) {
+                        ReviewPromptManager.markPromptShown()
+                        requestReview()
+                    }
+                }
+            } message: {
+                if let count = sessionSummaryCount {
+                    Text("Detected \(count) sleep-talk clip(s) during this session. Check the Recordings and Analysis tabs!")
+                }
             }
             .onChange(of: recorder.state) { _, newState in
                 if newState == .idle {
@@ -207,7 +230,11 @@ struct MonitorView: View {
                     }
                 }
             } else {
+                let recordedCount = recorder.sessionRecordingCount
                 recorder.stopMonitoring()
+                if recordedCount > 0 {
+                    sessionSummaryCount = recordedCount
+                }
             }
         } label: {
             HStack(spacing: 10) {

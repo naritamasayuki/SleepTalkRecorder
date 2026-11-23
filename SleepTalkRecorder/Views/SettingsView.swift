@@ -3,6 +3,32 @@ import SwiftUI
 /// 自動録音パラメータや夜間表示の設定を行う画面
 struct SettingsView: View {
     @Bindable var recorder: SleepAudioRecorder
+    @State private var reminderPermissionDenied = false
+
+    private var reminderTimeBinding: Binding<Date> {
+        Binding(
+            get: {
+                var components = DateComponents()
+                components.hour = recorder.settings.bedtimeReminderHour
+                components.minute = recorder.settings.bedtimeReminderMinute
+                return Calendar.current.date(from: components) ?? Date()
+            },
+            set: { newDate in
+                let components = Calendar.current.dateComponents([.hour, .minute], from: newDate)
+                recorder.settings.bedtimeReminderHour = components.hour ?? 23
+                recorder.settings.bedtimeReminderMinute = components.minute ?? 0
+                if recorder.settings.bedtimeReminderEnabled {
+                    Task {
+                        let scheduled = await BedtimeReminderManager.scheduleDailyReminder(
+                            hour: recorder.settings.bedtimeReminderHour,
+                            minute: recorder.settings.bedtimeReminderMinute
+                        )
+                        reminderPermissionDenied = !scheduled
+                    }
+                }
+            }
+        )
+    }
 
     var body: some View {
         NavigationStack {
@@ -81,6 +107,53 @@ struct SettingsView: View {
                     Toggle("Transcribe Sleep Talk for File Name", isOn: $recorder.settings.transcribeForFileName)
                 }
 
+                Section {
+                    Toggle(
+                        "Daily Bedtime Reminder",
+                        isOn: Binding(
+                            get: { recorder.settings.bedtimeReminderEnabled },
+                            set: { enabled in
+                                recorder.settings.bedtimeReminderEnabled = enabled
+                                Task {
+                                    if enabled {
+                                        let scheduled = await BedtimeReminderManager.scheduleDailyReminder(
+                                            hour: recorder.settings.bedtimeReminderHour,
+                                            minute: recorder.settings.bedtimeReminderMinute
+                                        )
+                                        if !scheduled {
+                                            recorder.settings.bedtimeReminderEnabled = false
+                                            reminderPermissionDenied = true
+                                        } else {
+                                            reminderPermissionDenied = false
+                                        }
+                                    } else {
+                                        BedtimeReminderManager.cancelReminder()
+                                        reminderPermissionDenied = false
+                                    }
+                                }
+                            }
+                        )
+                    )
+
+                    if recorder.settings.bedtimeReminderEnabled {
+                        DatePicker(
+                            "Reminder Time",
+                            selection: reminderTimeBinding,
+                            displayedComponents: .hourAndMinute
+                        )
+                    }
+
+                    if reminderPermissionDenied {
+                        Text("Notifications are disabled. Enable them in the Settings app to receive bedtime reminders.")
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                    }
+                } header: {
+                    Text("Bedtime Reminder")
+                } footer: {
+                    Text("Sends a daily notification so you don't forget to start sleep monitoring before bed.")
+                }
+
                 Section("Support & Feedback") {
                     if let goodsURL = AmazonSleepGoodsService.searchURL(for: AmazonSleepGoodsService.recommendations(for: nil)[0]) {
                         Link(destination: goodsURL) {
@@ -112,6 +185,8 @@ struct SettingsView: View {
 
                 Section {
                     Button("Reset to Defaults", role: .destructive) {
+                        BedtimeReminderManager.cancelReminder()
+                        reminderPermissionDenied = false
                         recorder.settings = .default
                     }
                 }

@@ -46,6 +46,22 @@ struct AnalysisView: View {
                 }
             }
             .navigationTitle("Sleep Talk Analysis")
+            .toolbar {
+                if !store.recordings.isEmpty,
+                   let cardImage = AnalysisShareCardView.renderImage(for: analysis) {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        ShareLink(
+                            item: Image(uiImage: cardImage),
+                            preview: SharePreview(
+                                String(localized: "SleepTalk Psychology Report"),
+                                image: Image(uiImage: cardImage)
+                            )
+                        ) {
+                            Label("Share Report Card", systemImage: "square.and.arrow.up")
+                        }
+                    }
+                }
+            }
         }
     }
 
