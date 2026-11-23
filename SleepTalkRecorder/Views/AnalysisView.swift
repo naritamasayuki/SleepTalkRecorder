@@ -13,17 +13,26 @@ struct AnalysisView: View {
         NavigationStack {
             Group {
                 if store.recordings.isEmpty {
-                    ContentUnavailableView(
-                        "No Data to Analyze",
-                        systemImage: "chart.bar.xaxis",
-                        description: Text("Once sleep talk is recorded, time trends and subconscious insights will appear here.")
-                    )
+                    ScrollView {
+                        VStack(spacing: 20) {
+                            ContentUnavailableView(
+                                "No Data to Analyze",
+                                systemImage: "chart.bar.xaxis",
+                                description: Text("Once sleep talk is recorded, time trends and subconscious insights will appear here.")
+                            )
+                            .padding(.top, 24)
+
+                            SleepGoodsSectionView(psychologicalNeed: nil)
+                                .padding(.horizontal)
+                        }
+                    }
                 } else {
                     ScrollView {
                         VStack(spacing: 20) {
                             if let primaryNeed = analysis.primaryNeed {
                                 psychologyHeroCard(primaryNeed, allNeeds: analysis.psychologicalNeeds)
                             }
+                            SleepGoodsSectionView(psychologicalNeed: analysis.primaryNeed?.type)
                             summaryGrid(analysis)
                             hourlyChartCard(analysis)
                             volumeCard(analysis)

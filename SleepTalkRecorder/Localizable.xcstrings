@@ -145,6 +145,16 @@
         }
       }
     },
+    "3D Blackout Sleep Mask": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "立体遮光アイマスク"
+          }
+        }
+      }
+    },
     "< -30 dB": {
       "localizations": {
         "en": {
@@ -331,12 +341,52 @@
         }
       }
     },
+    "Blocks ambient noise for uninterrupted rest": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "周囲の生活音を遮断し静かな睡眠環境を作ります"
+          }
+        }
+      }
+    },
+    "Blocks light completely for calm, secure rest": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "光をしっかり遮断し安心できる睡眠空間へ"
+          }
+        }
+      }
+    },
+    "Browse Sleep Goods on Amazon": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Amazonで安眠グッズを探す"
+          }
+        }
+      }
+    },
     "Bug Report": {
       "localizations": {
         "ja": {
           "stringUnit": {
             "state": "translated",
             "value": "バグ報告"
+          }
+        }
+      }
+    },
+    "Caffeine-Free Herbal Tea": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ノンカフェイン・カモミールティー"
           }
         }
       }
@@ -363,6 +413,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "種別"
+          }
+        }
+      }
+    },
+    "Chamomile blend to unwind before bedtime": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "おやすみ前に心を落ち着かせるハーブティー"
           }
         }
       }
@@ -395,6 +455,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "信頼できる人や家族と少し会話したり、安心できる音楽を聴いてから眠ると心が満たされます。"
+          }
+        }
+      }
+    },
+    "Comfort Body Pillow": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ふわふわ安眠抱き枕"
           }
         }
       }
@@ -601,6 +671,16 @@
         }
       }
     },
+    "Ergonomic Sleep Pillow": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "安眠・低反発枕"
+          }
+        }
+      }
+    },
     "Error": {
       "localizations": {
         "en": {
@@ -801,6 +881,46 @@
         }
       }
     },
+    "Gentle ambient sounds for peaceful nights": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "心地よい環境音で穏やかな入眠をサポート"
+          }
+        }
+      }
+    },
+    "Gentle pressure for a grounded, calm feeling": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ほどよい重みで安心感を与え深い休息へ導きます"
+          }
+        }
+      }
+    },
+    "Gently warms tired eyes for deeper sleep": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "目元をじんわり温めて深い眠りをサポート"
+          }
+        }
+      }
+    },
+    "Helpful items tailored to your sleep condition (opens Amazon).": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "睡眠傾向に合わせた快眠サポートグッズ（Amazonが開きます）。"
+          }
+        }
+      }
+    },
     "Hour": {
       "localizations": {
         "en": {
@@ -871,6 +991,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "根拠ワード:"
+          }
+        }
+      }
+    },
+    "Lavender & calming scents to release tension": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ラベンダー等の香りで日中の緊張を和らげます"
           }
         }
       }
@@ -1279,6 +1409,16 @@
         }
       }
     },
+    "PR": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PR"
+          }
+        }
+      }
+    },
     "Paused due to a phone call or alarm.": {
       "localizations": {
         "en": {
@@ -1401,6 +1541,16 @@
         }
       }
     },
+    "Provides a cozy, reassuring sleeping posture": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "包まれる安心感でリラックスした寝姿勢へ"
+          }
+        }
+      }
+    },
     "Psychological Needs Balance": {
       "localizations": {
         "en": {
@@ -1413,6 +1563,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "心理ニーズのバランス"
+          }
+        }
+      }
+    },
+    "Recommended Sleep Goods": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "おすすめ安眠グッズ"
           }
         }
       }
@@ -1529,6 +1689,16 @@
         }
       }
     },
+    "Relaxing Bath Salts": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "快眠リラックス入浴剤"
+          }
+        }
+      }
+    },
     "Report on GitHub Issues": {
       "localizations": {
         "ja": {
@@ -1639,6 +1809,16 @@
         }
       }
     },
+    "Sleep Aroma Diffuser": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "安眠アロマディフューザー"
+          }
+        }
+      }
+    },
     "Sleep Monitor": {
       "localizations": {
         "en": {
@@ -1699,6 +1879,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "最も寝言が多い時間帯は %lld時台 です。"
+          }
+        }
+      }
+    },
+    "Soft Sleep Earplugs": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "睡眠用ソフト耳栓"
+          }
+        }
+      }
+    },
+    "Soft amber glow that won't disrupt sleep": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "眠りを妨げにくい優しい暖色の間接照明"
           }
         }
       }
@@ -1789,6 +1989,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "サポート・ご要望"
+          }
+        }
+      }
+    },
+    "Supports neck alignment and reduces restlessness": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "首元を支えて寝返りや浅い眠りを軽減"
           }
         }
       }
@@ -2027,6 +2237,46 @@
         }
       }
     },
+    "Warm Bedside Night Light": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "暖色ベッドサイドライト"
+          }
+        }
+      }
+    },
+    "Warm up before bed to ease physical fatigue": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "就寝前に体を温めて一日の疲れをほぐします"
+          }
+        }
+      }
+    },
+    "Warming Eye Mask": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ホットアイマスク"
+          }
+        }
+      }
+    },
+    "Weighted Blanket": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "加重ブランケット"
+          }
+        }
+      }
+    },
     "Whisper": {
       "localizations": {
         "en": {
@@ -2039,6 +2289,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "ささやき"
+          }
+        }
+      }
+    },
+    "White Noise Sound Machine": {
+      "localizations": {
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ホワイトノイズマシン"
           }
         }
       }

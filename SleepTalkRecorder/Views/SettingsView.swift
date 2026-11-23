@@ -82,6 +82,21 @@ struct SettingsView: View {
                 }
 
                 Section("Support & Feedback") {
+                    if let goodsURL = AmazonSleepGoodsService.searchURL(for: AmazonSleepGoodsService.recommendations(for: nil)[0]) {
+                        Link(destination: goodsURL) {
+                            HStack {
+                                Label("Browse Sleep Goods on Amazon", systemImage: "bag.fill")
+                                Spacer()
+                                Text("PR")
+                                    .font(.caption2.bold())
+                                    .padding(.horizontal, 5)
+                                    .padding(.vertical, 2)
+                                    .background(Color.orange.opacity(0.25), in: RoundedRectangle(cornerRadius: 4))
+                                    .foregroundStyle(.orange)
+                            }
+                        }
+                    }
+
                     NavigationLink {
                         FeedbackFormView()
                     } label: {
