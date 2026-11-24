@@ -1,12 +1,22 @@
 import SwiftUI
 
-/// 録音された寝言クリップの一覧・再生・削除・共有を行う画面
+/// 録音された寝言クリップの日付別一覧・お気に入り・再生・削除・共有を行う画面
 struct RecordingsListView: View {
     var store: RecordingStore
     @Bindable var playbackManager: AudioPlaybackManager
     var isMonitoring: Bool
 
+    @State private var showFavoritesOnly = false
     @State private var showDeleteAllConfirm = false
+    @State private var showDeleteNonFavoritesConfirm = false
+
+    private var filteredRecordings: [RecordingItem] {
+        showFavoritesOnly ? store.recordings.filter(\.isFavorite) : store.recordings
+    }
+
+    private var groupedSections: [(day: Date, items: [RecordingItem])] {
+        RecordingStore.groupedByDay(filteredRecordings)
+    }
 
     var body: some View {
         NavigationStack {
@@ -18,29 +28,50 @@ struct RecordingsListView: View {
                         description: Text("Start the Sleep Monitor to automatically save detected sleep talk here.")
                     )
                 } else {
-                    List {
-                        if isMonitoring {
-                            Section {
-                                Label(
-                                    "Playback is disabled while monitoring. Stop monitoring to play recordings.",
-                                    systemImage: "info.circle"
-                                )
-                                .font(.caption)
-                                .foregroundStyle(.orange)
-                            }
+                    VStack(spacing: 0) {
+                        Picker("Filter", selection: $showFavoritesOnly) {
+                            Text("All").tag(false)
+                            Text("Favorites").tag(true)
                         }
+                        .pickerStyle(.segmented)
+                        .padding(.horizontal)
+                        .padding(.vertical, 8)
 
-                        Section {
-                            ForEach(store.recordings) { item in
-                                recordingRow(for: item)
-                            }
-                            .onDelete { offsets in
-                                for index in offsets where store.recordings.indices.contains(index) {
-                                    if playbackManager.currentPlayingID == store.recordings[index].id {
-                                        playbackManager.stop()
+                        if filteredRecordings.isEmpty {
+                            ContentUnavailableView(
+                                "No Favorite Recordings",
+                                systemImage: "star.slash",
+                                description: Text("Tap the star icon on any clip to keep your favorite sleep talk here.")
+                            )
+                        } else {
+                            List {
+                                if isMonitoring {
+                                    Section {
+                                        Label(
+                                            "Playback is disabled while monitoring. Stop monitoring to play recordings.",
+                                            systemImage: "info.circle"
+                                        )
+                                        .font(.caption)
+                                        .foregroundStyle(.orange)
                                     }
                                 }
-                                store.delete(at: offsets)
+
+                                ForEach(groupedSections, id: \.day) { section in
+                                    Section(sectionHeaderTitle(for: section.day)) {
+                                        ForEach(section.items) { item in
+                                            recordingRow(for: item)
+                                        }
+                                        .onDelete { offsets in
+                                            for index in offsets where section.items.indices.contains(index) {
+                                                let target = section.items[index]
+                                                if playbackManager.currentPlayingID == target.id {
+                                                    playbackManager.stop()
+                                                }
+                                                store.delete(target)
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -50,12 +81,41 @@ struct RecordingsListView: View {
             .toolbar {
                 if !store.recordings.isEmpty {
                     ToolbarItem(placement: .topBarTrailing) {
-                        Button("Delete All", role: .destructive) {
-                            showDeleteAllConfirm = true
+                        Menu {
+                            if store.recordings.contains(where: \.isFavorite) {
+                                Button(role: .destructive) {
+                                    showDeleteNonFavoritesConfirm = true
+                                } label: {
+                                    Label("Delete Non-Favorites", systemImage: "star.slash")
+                                }
+                            }
+                            Button(role: .destructive) {
+                                showDeleteAllConfirm = true
+                            } label: {
+                                Label("Delete All", systemImage: "trash")
+                            }
+                        } label: {
+                            Image(systemName: "ellipsis.circle")
                         }
-                        .foregroundStyle(.red)
                     }
                 }
+            }
+            .confirmationDialog(
+                "Delete all non-favorite recordings?",
+                isPresented: $showDeleteNonFavoritesConfirm,
+                titleVisibility: .visible
+            ) {
+                Button("Delete Non-Favorites", role: .destructive) {
+                    if let currentID = playbackManager.currentPlayingID,
+                       let current = store.recordings.first(where: { $0.id == currentID }),
+                       !current.isFavorite {
+                        playbackManager.stop()
+                    }
+                    store.deleteNonFavorites()
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("Favorite clips will be kept.")
             }
             .confirmationDialog(
                 "Delete all recordings?",
@@ -112,10 +172,8 @@ struct RecordingsListView: View {
                         .lineLimit(1)
 
                     HStack(spacing: 12) {
-                        if item.transcript != nil {
-                            Label(item.formattedDate, systemImage: "calendar")
-                        }
-                        Label(item.formattedDuration, systemImage: "clock")
+                        Label(item.formattedTimeOnly, systemImage: "clock.badge")
+                        Label(item.formattedDuration, systemImage: "timer")
                         Label(String(format: "%.0f dB", item.peakDecibels), systemImage: "speaker.wave.2")
                     }
                     .font(.caption)
@@ -123,6 +181,15 @@ struct RecordingsListView: View {
                 }
 
                 Spacer()
+
+                Button {
+                    store.toggleFavorite(for: item.id)
+                } label: {
+                    Image(systemName: item.isFavorite ? "star.fill" : "star")
+                        .font(.body)
+                        .foregroundStyle(item.isFavorite ? .yellow : .secondary)
+                }
+                .buttonStyle(.plain)
 
                 if FileManager.default.fileExists(atPath: fileURL.path) {
                     ShareLink(item: fileURL) {
@@ -156,6 +223,16 @@ struct RecordingsListView: View {
             }
         }
         .padding(.vertical, 4)
+    }
+
+    private func sectionHeaderTitle(for day: Date) -> String {
+        if Calendar.current.isDateInToday(day) {
+            return String(localized: "Today")
+        }
+        if Calendar.current.isDateInYesterday(day) {
+            return String(localized: "Yesterday")
+        }
+        return day.formatted(date: .abbreviated, time: .omitted)
     }
 
     private func formatTime(_ seconds: TimeInterval) -> String {

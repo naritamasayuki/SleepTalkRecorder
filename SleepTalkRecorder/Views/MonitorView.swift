@@ -20,6 +20,9 @@ struct MonitorView: View {
                 ScrollView {
                     VStack(spacing: 24) {
                         statusHeader
+                        if recorder.state == .countdown, let endTime = recorder.countdownEndTime {
+                            countdownCard(until: endTime)
+                        }
                         sessionStatsCard
                         meterAndThresholdCard
                         if recorder.permissionState == .denied {
@@ -109,37 +112,69 @@ struct MonitorView: View {
         .padding(.top, 8)
     }
 
+    private func countdownCard(until endTime: Date) -> some View {
+        VStack(spacing: 12) {
+            TimelineView(.periodic(from: .now, by: 1.0)) { context in
+                let remaining = max(0, Int(endTime.timeIntervalSince(context.date).rounded(.up)))
+                Text(String(format: "%02d:%02d", remaining / 60, remaining % 60))
+                    .font(.system(size: 36, weight: .bold, design: .rounded).monospacedDigit())
+                    .foregroundStyle(.yellow)
+            }
+
+            Button {
+                recorder.skipCountdownAndStartNow()
+            } label: {
+                Label("Start Now", systemImage: "play.fill")
+                    .font(.subheadline.weight(.semibold))
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(.indigo)
+        }
+        .frame(maxWidth: .infinity)
+        .padding()
+        .background(Color.yellow.opacity(0.1), in: RoundedRectangle(cornerRadius: 16))
+    }
+
     private var sessionStatsCard: some View {
-        HStack(spacing: 16) {
-            VStack(spacing: 4) {
-                Text("Elapsed Time")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                if let startTime = recorder.sessionStartTime, recorder.state != .idle {
-                    TimelineView(.periodic(from: .now, by: 1.0)) { context in
-                        Text(formatElapsed(from: startTime, to: context.date))
-                            .font(.title3.monospacedDigit().bold())
-                    }
-                } else {
-                    Text("00:00:00")
-                        .font(.title3.monospacedDigit().bold())
+        VStack(spacing: 10) {
+            HStack(spacing: 16) {
+                VStack(spacing: 4) {
+                    Text("Elapsed Time")
+                        .font(.caption)
                         .foregroundStyle(.secondary)
+                    if let startTime = recorder.sessionStartTime, recorder.state != .idle {
+                        TimelineView(.periodic(from: .now, by: 1.0)) { context in
+                            Text(formatElapsed(from: startTime, to: context.date))
+                                .font(.title3.monospacedDigit().bold())
+                        }
+                    } else {
+                        Text("00:00:00")
+                            .font(.title3.monospacedDigit().bold())
+                            .foregroundStyle(.secondary)
+                    }
                 }
+                .frame(maxWidth: .infinity)
+
+                Divider()
+                    .frame(height: 36)
+
+                VStack(spacing: 4) {
+                    Text("Detected Clips")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text("\(recorder.sessionRecordingCount) clips")
+                        .font(.title3.monospacedDigit().bold())
+                        .foregroundStyle(recorder.sessionRecordingCount > 0 ? .cyan : .primary)
+                }
+                .frame(maxWidth: .infinity)
             }
-            .frame(maxWidth: .infinity)
 
-            Divider()
-                .frame(height: 36)
-
-            VStack(spacing: 4) {
-                Text("Detected Clips")
-                    .font(.caption)
+            if let autoStop = recorder.autoStopDate, recorder.state == .monitoring || recorder.state == .recording {
+                let stopTimeText = autoStop.formatted(date: .omitted, time: .shortened)
+                Label("Auto-stop at \(stopTimeText)", systemImage: "timer")
+                    .font(.caption2)
                     .foregroundStyle(.secondary)
-                Text("\(recorder.sessionRecordingCount) clips")
-                    .font(.title3.monospacedDigit().bold())
-                    .foregroundStyle(recorder.sessionRecordingCount > 0 ? .cyan : .primary)
             }
-            .frame(maxWidth: .infinity)
         }
         .padding()
         .background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 16))
@@ -282,6 +317,7 @@ struct MonitorView: View {
     private var statusColor: Color {
         switch recorder.state {
         case .idle: return .indigo
+        case .countdown: return .yellow
         case .monitoring: return .cyan
         case .recording: return .red
         case .interrupted: return .orange
@@ -291,6 +327,7 @@ struct MonitorView: View {
     private var statusIconName: String {
         switch recorder.state {
         case .idle: return "moon.zzz"
+        case .countdown: return "timer"
         case .monitoring: return "ear.and.waveform"
         case .recording: return "mic.fill"
         case .interrupted: return "pause.circle.fill"
@@ -301,6 +338,8 @@ struct MonitorView: View {
         switch recorder.state {
         case .idle:
             return String(localized: "Standby")
+        case .countdown:
+            return String(localized: "Waiting to Start")
         case .monitoring:
             return String(localized: "Monitoring Audio")
         case .recording:
@@ -315,6 +354,8 @@ struct MonitorView: View {
         switch recorder.state {
         case .idle:
             return String(localized: "Tap the button before sleeping to automatically record only sleep talk.")
+        case .countdown:
+            return String(localized: "Recording will begin automatically once the start delay finishes.")
         case .monitoring:
             return String(localized: "Recording starts automatically when sound exceeds the threshold.")
         case .recording:

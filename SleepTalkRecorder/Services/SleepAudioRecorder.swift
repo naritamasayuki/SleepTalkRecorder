@@ -9,6 +9,7 @@ import Observation
 final class SleepAudioRecorder {
     enum MonitoringState: Equatable, Sendable {
         case idle
+        case countdown
         case monitoring
         case recording
         case interrupted
@@ -26,6 +27,8 @@ final class SleepAudioRecorder {
     private(set) var sessionStartTime: Date?
     private(set) var sessionRecordingCount: Int = 0
     private(set) var currentClipDuration: TimeInterval = 0
+    private(set) var countdownEndTime: Date?
+    private(set) var autoStopDate: Date?
     var errorMessage: String?
 
     var settings: RecorderSettings {
@@ -46,6 +49,8 @@ final class SleepAudioRecorder {
     private var processor: AudioStreamProcessor?
     private var interruptionObserver: NSObjectProtocol?
     private var routeChangeObserver: NSObjectProtocol?
+    private var countdownTask: Task<Void, Never>?
+    private var autoStopTask: Task<Void, Never>?
 
     init(store: RecordingStore, settings: RecorderSettings = .load()) {
         self.store = store
@@ -96,27 +101,44 @@ final class SleepAudioRecorder {
             _ = await SpeechTranscriber.requestAuthorizationIfNeeded()
         }
 
-        do {
-            try configureAudioSession()
-            try startAudioEngine()
-            registerAudioNotifications()
-
-            sessionStartTime = Date()
+        if settings.startDelayMinutes > 0 {
+            let delaySeconds = TimeInterval(settings.startDelayMinutes * 60)
+            let targetDate = Date().addingTimeInterval(delaySeconds)
+            countdownEndTime = targetDate
             sessionRecordingCount = 0
             currentClipDuration = 0
-            state = .monitoring
-            logger.info("寝言モニタリングを開始しました (しきい値: \(self.settings.thresholdDecibels) dBFS)")
-        } catch {
-            logger.error("モニタリング開始エラー: \(error.localizedDescription, privacy: .public)")
-            errorMessage = String(localized: "Failed to start audio recording: \(error.localizedDescription)")
-            cleanupEngine()
-            state = .idle
+            state = .countdown
+            logger.info("開始遅延タイマーを開始しました (\(self.settings.startDelayMinutes)分後)")
+
+            countdownTask?.cancel()
+            countdownTask = Task { [weak self] in
+                try? await Task.sleep(for: .seconds(delaySeconds))
+                guard !Task.isCancelled else { return }
+                self?.beginActiveMonitoring()
+            }
+        } else {
+            beginActiveMonitoring()
         }
+    }
+
+    /// 開始遅延カウントダウンをスキップして今すぐ音声監視を開始する
+    func skipCountdownAndStartNow() {
+        guard state == .countdown else { return }
+        countdownTask?.cancel()
+        countdownTask = nil
+        beginActiveMonitoring()
     }
 
     /// 寝言モニタリングを停止する
     func stopMonitoring() {
         guard state != .idle else { return }
+        countdownTask?.cancel()
+        countdownTask = nil
+        autoStopTask?.cancel()
+        autoStopTask = nil
+        countdownEndTime = nil
+        autoStopDate = nil
+
         unregisterAudioNotifications()
         processor?.finalizeIfNeeded()
         cleanupEngine()
@@ -127,6 +149,44 @@ final class SleepAudioRecorder {
         currentClipDuration = 0
         sessionStartTime = nil
         logger.info("寝言モニタリングを停止しました")
+    }
+
+    private func beginActiveMonitoring() {
+        countdownEndTime = nil
+        do {
+            try configureAudioSession()
+            try startAudioEngine()
+            registerAudioNotifications()
+
+            let now = Date()
+            sessionStartTime = now
+            sessionRecordingCount = 0
+            currentClipDuration = 0
+            state = .monitoring
+            scheduleAutoStopIfNeeded(from: now)
+            logger.info("寝言モニタリングを開始しました (しきい値: \(self.settings.thresholdDecibels) dBFS)")
+        } catch {
+            logger.error("モニタリング開始エラー: \(error.localizedDescription, privacy: .public)")
+            errorMessage = String(localized: "Failed to start audio recording: \(error.localizedDescription)")
+            cleanupEngine()
+            state = .idle
+        }
+    }
+
+    private func scheduleAutoStopIfNeeded(from startDate: Date) {
+        autoStopTask?.cancel()
+        autoStopTask = nil
+        autoStopDate = nil
+
+        guard settings.autoStopHours > 0 else { return }
+        let durationSeconds = TimeInterval(settings.autoStopHours * 3600)
+        autoStopDate = startDate.addingTimeInterval(durationSeconds)
+        autoStopTask = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(durationSeconds))
+            guard !Task.isCancelled else { return }
+            self?.logger.info("自動終了タイマーに到達したためモニタリングを停止します")
+            self?.stopMonitoring()
+        }
     }
 
     // MARK: - Private Setup

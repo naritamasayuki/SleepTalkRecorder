@@ -8,6 +8,7 @@ struct RecordingItem: Identifiable, Codable, Hashable, Sendable {
     let duration: TimeInterval
     let peakDecibels: Float
     var transcript: String?
+    var isFavorite: Bool
 
     init(
         id: UUID = UUID(),
@@ -15,7 +16,8 @@ struct RecordingItem: Identifiable, Codable, Hashable, Sendable {
         createdAt: Date = Date(),
         duration: TimeInterval,
         peakDecibels: Float,
-        transcript: String? = nil
+        transcript: String? = nil,
+        isFavorite: Bool = false
     ) {
         self.id = id
         self.fileName = fileName
@@ -23,6 +25,18 @@ struct RecordingItem: Identifiable, Codable, Hashable, Sendable {
         self.duration = duration
         self.peakDecibels = peakDecibels
         self.transcript = transcript
+        self.isFavorite = isFavorite
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        fileName = try container.decode(String.self, forKey: .fileName)
+        createdAt = try container.decode(Date.self, forKey: .createdAt)
+        duration = try container.decode(TimeInterval.self, forKey: .duration)
+        peakDecibels = try container.decode(Float.self, forKey: .peakDecibels)
+        transcript = try container.decodeIfPresent(String.self, forKey: .transcript)
+        isFavorite = try container.decodeIfPresent(Bool.self, forKey: .isFavorite) ?? false
     }
 
     /// 一覧表示用のタイトル（文字起こし結果があれば優先して返す）
@@ -41,16 +55,22 @@ struct RecordingItem: Identifiable, Codable, Hashable, Sendable {
         return String(format: "%d:%02d", minutes, seconds)
     }
 
-    /// 録音開始日時を端末のロケールに合わせてフォーマットして返す
+    /// 録音開始日時を端末のロケール設定に合わせてフォーマットして返す
     var formattedDate: String {
         formattedDate(locale: .autoupdatingCurrent)
     }
 
-    /// 指定したロケールで録音開始日時をフォーマットして返す
+    /// 指定されたロケールで録音開始日時をフォーマットして返す
     func formattedDate(locale: Locale) -> String {
         let formatter = DateFormatter()
         formatter.locale = locale
-        formatter.setLocalizedDateFormatFromTemplate("MMMdEHHmmss")
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .medium
         return formatter.string(from: createdAt)
+    }
+
+    /// 録音時刻のみを端末のロケール設定に合わせてフォーマットして返す
+    var formattedTimeOnly: String {
+        createdAt.formatted(date: .omitted, time: .standard)
     }
 }

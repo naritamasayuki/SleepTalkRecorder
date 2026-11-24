@@ -102,6 +102,28 @@ struct SettingsView: View {
                     Text("Pre-roll buffering captures audio just before speech triggers so the beginning of sleep talk is not cut off.")
                 }
 
+                Section {
+                    Picker("Start Delay Timer", selection: $recorder.settings.startDelayMinutes) {
+                        Text("Off").tag(0)
+                        Text("15 min").tag(15)
+                        Text("30 min").tag(30)
+                        Text("45 min").tag(45)
+                        Text("60 min").tag(60)
+                    }
+
+                    Picker("Auto-Stop Timer", selection: $recorder.settings.autoStopHours) {
+                        Text("Off").tag(0)
+                        Text("4 hours").tag(4)
+                        Text("6 hours").tag(6)
+                        Text("8 hours").tag(8)
+                        Text("10 hours").tag(10)
+                    }
+                } header: {
+                    Text("Recording Timers")
+                } footer: {
+                    Text("Use a start delay to skip pre-sleep noise, and auto-stop so recording ends automatically in the morning.")
+                }
+
                 Section("Display & Naming Settings") {
                     Toggle("Dim Screen on Start (Night Mode)", isOn: $recorder.settings.dimScreenDuringMonitoring)
                     Toggle("Transcribe Sleep Talk for File Name", isOn: $recorder.settings.transcribeForFileName)

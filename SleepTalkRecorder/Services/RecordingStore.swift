@@ -107,6 +107,45 @@ final class RecordingStore {
         }
     }
 
+    /// 指定された録音アイテムのお気に入り状態をトグルする
+    func toggleFavorite(for itemID: UUID) {
+        guard let index = recordings.firstIndex(where: { $0.id == itemID }) else { return }
+        recordings[index].isFavorite.toggle()
+        saveMetadata()
+    }
+
+    /// お気に入り以外の録音アイテムと音声ファイルを一括削除する
+    func deleteNonFavorites() {
+        let targets = recordings.filter { !$0.isFavorite }
+        for item in targets {
+            let url = fileURL(for: item)
+            if fileManager.fileExists(atPath: url.path) {
+                do {
+                    try fileManager.removeItem(at: url)
+                } catch {
+                    logger.error("音声ファイル削除エラー: \(error.localizedDescription, privacy: .public)")
+                }
+            }
+        }
+        recordings.removeAll { !$0.isFavorite }
+        saveMetadata()
+    }
+
+    /// 録音アイテムを日付ごと（新しい順）にグルーピングする
+    static func groupedByDay(
+        _ items: [RecordingItem],
+        calendar: Calendar = .current
+    ) -> [(day: Date, items: [RecordingItem])] {
+        let grouped = Dictionary(grouping: items) { item in
+            calendar.startOfDay(for: item.createdAt)
+        }
+        return grouped
+            .map { day, dayItems in
+                (day: day, items: dayItems.sorted { $0.createdAt > $1.createdAt })
+            }
+            .sorted { $0.day > $1.day }
+    }
+
     /// すべての録音アイテムと音声ファイルを削除する
     func deleteAll() {
         for item in recordings {
