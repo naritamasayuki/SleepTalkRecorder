@@ -2846,6 +2846,1417 @@
           }
         }
       }
+    },
+    "Some corrupted entries in recording history were skipped and recovered.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Some corrupted entries in recording history were skipped and recovered."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "録音履歴の一部破損データをスキップして復元しました。"
+          }
+        }
+      }
+    },
+    "Recording history file was corrupted and backed up. Existing audio files were recovered automatically.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recording history file was corrupted and backed up. Existing audio files were recovered automatically."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "録音履歴ファイルが破損していたためバックアップ退避し、端末内の音声ファイルを自動復元しました。"
+          }
+        }
+      }
+    },
+    "Sleep Recording Interrupted": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sleep Recording Interrupted"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "寝言録音が中断されました"
+          }
+        }
+      }
+    },
+    "Monitoring could not automatically resume after an interruption. Open the app to restart.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Monitoring could not automatically resume after an interruption. Open the app to restart."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "割り込み後に自動再開できませんでした。アプリを開いて再開してください。"
+          }
+        }
+      }
+    },
+    "Sleep Recording Stopped": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sleep Recording Stopped"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "寝言録音を停止しました"
+          }
+        }
+      }
+    },
+    "Monitoring was stopped because device storage is running low.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Monitoring was stopped because device storage is running low."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "端末の空き容量が少なくなったため、録音監視を安全に停止しました。"
+          }
+        }
+      }
+    },
+    "Detected %lld sleep-talk clip(s) overnight. Tap to listen and view your report.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detected %lld sleep-talk clip(s) overnight. Tap to listen and view your report."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "昨夜は寝言を%lld件検知しました。タップして再生・レポートを確認できます。"
+          }
+        }
+      }
+    },
+    "Overnight monitoring finished. No sleep talk was detected last night.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Overnight monitoring finished. No sleep talk was detected last night."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "おやすみ録音が終了しました。昨夜は寝言が検知されませんでした。"
+          }
+        }
+      }
+    },
+    "Not enough free storage space to start overnight recording. Please free up at least 100 MB.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not enough free storage space to start overnight recording. Please free up at least 100 MB."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "端末の空き容量が不足しているため開始できません。100 MB以上の空き容量を確保してください。"
+          }
+        }
+      }
+    },
+    "Monitoring stopped because device storage is running low.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Monitoring stopped because device storage is running low."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "端末の空き容量が少なくなったため監視を停止しました。"
+          }
+        }
+      }
+    },
+    "An error occurred while writing audio data. Please check available storage.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "An error occurred while writing audio data. Please check available storage."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "音声データの書き込みエラーが発生しました。空き容量をご確認ください。"
+          }
+        }
+      }
+    },
+    "Words related to rest and sleep appeared frequently. Taking a moment to unwind may feel refreshing.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Words related to rest and sleep appeared frequently. Taking a moment to unwind may feel refreshing."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "休息や睡眠に関する言葉が多く見られました。リラックスできる時間を意識してみると良さそうです。"
+          }
+        }
+      }
+    },
+    "Words about tasks or schedules appeared often. Your mind may still be sorting through daily routines.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Words about tasks or schedules appeared often. Your mind may still be sorting through daily routines."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "予定や日々のタスクに関する言葉が多く見られました。頭の中で日常の整理が続いている傾向があります。"
+          }
+        }
+      }
+    },
+    "Words about people or feelings appeared often, suggesting social moments stayed on your mind.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Words about people or feelings appeared often, suggesting social moments stayed on your mind."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "人や気持ちに関する言葉が多く見られました。身近なやり取りが記憶に残っていたようです。"
+          }
+        }
+      }
+    },
+    "Words linked to tension or alertness appeared in your clips. A calm bedtime routine may help you relax.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Words linked to tension or alertness appeared in your clips. A calm bedtime routine may help you relax."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "緊張や警戒に関わる言葉が見られました。就寝前にゆったり深呼吸する習慣がおすすめです。"
+          }
+        }
+      }
+    },
+    "Words about curiosity, fun, or wanting to go somewhere appeared often in your nighttime speech.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Words about curiosity, fun, or wanting to go somewhere appeared often in your nighttime speech."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "楽しさや好奇心、どこかへ行きたい気持ちに関する言葉が多く見られました。"
+          }
+        }
+      }
+    },
+    "Your recorded words reflect everyday thoughts being gently organized while you sleep.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your recorded words reflect everyday thoughts being gently organized while you sleep."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "日常の出来事や思考が、睡眠中に穏やかに整理されている傾向が見られます。"
+          }
+        }
+      }
+    },
+    "SleepTalk Report": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SleepTalk Report"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "寝言レポート"
+          }
+        }
+      }
+    },
+    "Sleep Talk Tendency (Reference)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sleep Talk Tendency (Reference)"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "寝言の傾向（参考）"
+          }
+        }
+      }
+    },
+    "For entertainment & self-reflection only. Not a medical diagnosis.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "For entertainment & self-reflection only. Not a medical diagnosis."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "※エンタメ・セルフリフレクション目的の参考表示であり、医学的診断ではありません。"
+          }
+        }
+      }
+    },
+    "#SleepTalkReport": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "#SleepTalkReport"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "#寝言診断"
+          }
+        }
+      }
+    },
+    "SleepTalk - Auto Recorder": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SleepTalk - Auto Recorder"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "寝言 - 自動録音＆分析"
+          }
+        }
+      }
+    },
+    "Available on App Store": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Available on App Store"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Store で配信中"
+          }
+        }
+      }
+    },
+    "Once sleep talk is recorded, time trends and self-reflection insights will appear here.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Once sleep talk is recorded, time trends and self-reflection insights will appear here."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "寝言が録音されると、時間帯の傾向やセルフリフレクション向けのレポートが表示されます。"
+          }
+        }
+      }
+    },
+    "Go to Sleep Monitor": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Go to Sleep Monitor"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "おやすみ録音を開始する"
+          }
+        }
+      }
+    },
+    "These insights are for entertainment and self-reflection only and have no medical or diagnostic basis.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "These insights are for entertainment and self-reflection only and have no medical or diagnostic basis."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "※この分析はエンタメ・セルフリフレクション目的の参考情報であり、医学的根拠・医療診断ではありません。"
+          }
+        }
+      }
+    },
+    "Collecting More Data": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Collecting More Data"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "データを収集中"
+          }
+        }
+      }
+    },
+    "At least %lld transcribed sleep-talk clips are needed to show tendency insights (currently %lld/%lld). Clips without transcribed speech are excluded.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "At least %lld transcribed sleep-talk clips are needed to show tendency insights (currently %lld/%lld). Clips without transcribed speech are excluded."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "傾向レポートを表示するには、文字起こし済みの寝言が%lld件以上必要です（現在 %lld/%lld件）。文字起こしのないクリップは除外されます。"
+          }
+        }
+      }
+    },
+    "Keyword Tendency Balance": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keyword Tendency Balance"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "キーワード傾向バランス"
+          }
+        }
+      }
+    },
+    "Include Transcribed Keywords": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Include Transcribed Keywords"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "頻出キーワードをカードに含める"
+          }
+        }
+      }
+    },
+    "Share Preview": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share Preview"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "シェアプレビュー"
+          }
+        }
+      }
+    },
+    "Close": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "閉じる"
+          }
+        }
+      }
+    },
+    "SleepTalk Report #SleepTalkReport %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SleepTalk Report #SleepTalkReport %@"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "寝言レポート #寝言診断 %@"
+          }
+        }
+      }
+    },
+    "Current %lld dB, threshold %lld dB": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Current %lld dB, threshold %lld dB"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "現在 %lld dB、しきい値 %lld dB"
+          }
+        }
+      }
+    },
+    "More Options": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More Options"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "その他の操作"
+          }
+        }
+      }
+    },
+    "Storage Notice": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Storage Notice"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保存データのお知らせ"
+          }
+        }
+      }
+    },
+    "Play": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Play"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "再生"
+          }
+        }
+      }
+    },
+    "Pause": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pause"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "一時停止"
+          }
+        }
+      }
+    },
+    "Remove from Favorites": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove from Favorites"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "お気に入りから削除"
+          }
+        }
+      }
+    },
+    "Add to Favorites": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add to Favorites"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "お気に入りに追加"
+          }
+        }
+      }
+    },
+    "Share Audio Clip": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share Audio Clip"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "音声クリップを共有"
+          }
+        }
+      }
+    },
+    "Advanced Detection Settings": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Advanced Detection Settings"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "詳細検知設定（上級者向け）"
+          }
+        }
+      }
+    },
+    "Max Clip Length": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Max Clip Length"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1クリップの最大録音時間"
+          }
+        }
+      }
+    },
+    "Pre-roll buffering captures audio just before speech triggers, and max clip length prevents huge files from steady fan or AC noise.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pre-roll buffering captures audio just before speech triggers, and max clip length prevents huge files from steady fan or AC noise."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "プリロールで話し始めの途切れを防ぎ、最大録音時間の上限で扇風機やエアコンによる巨大ファイル化を防ぎます。"
+          }
+        }
+      }
+    },
+    "Allow Apple Server Recognition": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allow Apple Server Recognition"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple サーバー認識を許可"
+          }
+        }
+      }
+    },
+    "On-device speech recognition is prioritized by default. Enabling server recognition allows audio to be processed by Apple's servers when on-device recognition is unavailable.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On-device speech recognition is prioritized by default. Enabling server recognition allows audio to be processed by Apple's servers when on-device recognition is unavailable."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "既定では端末内（オンデバイス）音声認識を優先します。オンにすると、端末内認識が使えない場合に Apple のサーバーで処理されることがあります。"
+          }
+        }
+      }
+    },
+    "Sleep Goods (PR)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sleep Goods (PR)"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "おすすめ安眠グッズ（PR）"
+          }
+        }
+      }
+    },
+    "Setup Guide": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Setup Guide"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "初期設定ガイド"
+          }
+        }
+      }
+    },
+    "Mic Test": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mic Test"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "マイクテスト"
+          }
+        }
+      }
+    },
+    "Stop Test": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stop Test"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "テスト停止"
+          }
+        }
+      }
+    },
+    "Auto-Calibrate (5s)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auto-Calibrate (5s)"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5秒で自動調整"
+          }
+        }
+      }
+    },
+    "Measuring...": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Measuring..."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "計測中..."
+          }
+        }
+      }
+    },
+    "Recommended threshold set to %lld dB.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recommended threshold set to %lld dB."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "部屋の環境音に合わせてしきい値を %lld dB に設定しました。"
+          }
+        }
+      }
+    },
+    "Mic Test Active": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mic Test Active"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "マイクテスト中"
+          }
+        }
+      }
+    },
+    "Speak or stay quiet to check the meter and tune the yellow threshold line.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Speak or stay quiet to check the meter and tune the yellow threshold line."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "話しかけたり静かにしてメーターの動きを確認し、黄色いしきい値ラインを合わせてください。"
+          }
+        }
+      }
+    },
+    "Paused due to a phone call or alarm. Attempting automatic resume...": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paused due to a phone call or alarm. Attempting automatic resume..."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "通話やアラームにより一時中断しました。自動再開を試みています..."
+          }
+        }
+      }
+    },
+    "Ended automatically by timer": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ended automatically by timer"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自動終了タイマーで完了しました"
+          }
+        }
+      }
+    },
+    "Stopped early because device storage was running low.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stopped early because device storage was running low."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "端末の空き容量が不足したため、途中で安全停止しました。"
+          }
+        }
+      }
+    },
+    "Interruptions During Session": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Interruptions During Session"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "セッション中の中断履歴"
+          }
+        }
+      }
+    },
+    "Don't Forget Tomorrow Night": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Don't Forget Tomorrow Night"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "明日の夜も忘れずに録音しませんか？"
+          }
+        }
+      }
+    },
+    "Enable a daily bedtime reminder so you never miss recording your sleep talk.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enable a daily bedtime reminder so you never miss recording your sleep talk."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "就寝リマインダーをオンにすると、毎晩の録音開始忘れを防げます。"
+          }
+        }
+      }
+    },
+    "Enable Daily Reminder (23:00)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enable Daily Reminder (23:00)"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "毎日23:00にお知らせする"
+          }
+        }
+      }
+    },
+    "Daily bedtime reminder enabled!": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Daily bedtime reminder enabled!"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "毎日の就寝リマインダーをオンにしました！"
+          }
+        }
+      }
+    },
+    "Notifications are disabled in system Settings.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notifications are disabled in system Settings."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iOSの「設定」で通知が無効になっています。"
+          }
+        }
+      }
+    },
+    "Listen to Recordings": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Listen to Recordings"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "録音履歴を聴く"
+          }
+        }
+      }
+    },
+    "Session Summary": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Session Summary"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "セッション結果"
+          }
+        }
+      }
+    },
+    "Welcome to SleepTalk": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Welcome to SleepTalk"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「寝言」へようこそ"
+          }
+        }
+      }
+    },
+    "Automatically records only your sleep talk overnight while skipping hours of silence.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automatically records only your sleep talk overnight while skipping hours of silence."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無音をスキップして、睡眠中の寝言だけを自動で録音・文字起こしします。"
+          }
+        }
+      }
+    },
+    "1. Test Your Room Volume": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1. Test Your Room Volume"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1. お部屋の静けさを5秒計測"
+          }
+        }
+      }
+    },
+    "Measure 5 seconds of quiet room noise so the app sets the ideal threshold automatically.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Measure 5 seconds of quiet room noise so the app sets the ideal threshold automatically."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5秒間静かにするだけで、お部屋に最適な検知しきい値を自動設定します。"
+          }
+        }
+      }
+    },
+    "2. Lock Screen & Sleep": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "2. Lock Screen & Sleep"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "2. 画面をロックしておやすみ"
+          }
+        }
+      }
+    },
+    "Plug in your charger, start monitoring, and lock your screen. Recordings stay privately on your iPhone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plug in your charger, start monitoring, and lock your screen. Recordings stay privately on your iPhone."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "充電ケーブルをつないで開始すれば、画面ロック中もバックグラウンドで自動監視します。"
+          }
+        }
+      }
+    },
+    "3. Check Your Morning Report": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3. Check Your Morning Report"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3. 翌朝に寝言とレポートを確認"
+          }
+        }
+      }
+    },
+    "Listen to clips, view transcriptions, and explore fun self-reflection insights.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Listen to clips, view transcriptions, and explore fun self-reflection insights."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "翌朝に寝言の再生・文字起こし・傾向レポートを楽しめます。"
+          }
+        }
+      }
+    },
+    "Measuring room silence (5s)...": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Measuring room silence (5s)..."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "お部屋の環境音を計測中（5秒）..."
+          }
+        }
+      }
+    },
+    "Run 5-Second Mic Calibration": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Run 5-Second Mic Calibration"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "5秒マイクテストで自動調整"
+          }
+        }
+      }
+    },
+    "Ideal threshold set to %lld dB!": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ideal threshold set to %lld dB!"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "おすすめのしきい値を %lld dB に設定しました！"
+          }
+        }
+      }
+    },
+    "Get Started": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Get Started"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "はじめる"
+          }
+        }
+      }
+    },
+    "Quick Setup": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quick Setup"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "かんたん初期設定"
+          }
+        }
+      }
+    },
+    "Skip": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skip"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "スキップ"
+          }
+        }
+      }
+    },
+    "Stop Sleep Recording": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stop Sleep Recording"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "寝言録音を停止"
+          }
+        }
+      }
+    },
+    "Starts automatic sleep talk monitoring.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Starts automatic sleep talk monitoring."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "寝言の自動録音モニタリングを開始します。"
+          }
+        }
+      }
+    },
+    "Stops automatic sleep talk monitoring.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stops automatic sleep talk monitoring."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "寝言の自動録音モニタリングを停止します。"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

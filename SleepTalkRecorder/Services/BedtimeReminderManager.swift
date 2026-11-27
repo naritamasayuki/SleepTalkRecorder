@@ -71,4 +71,63 @@ enum BedtimeReminderManager {
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [notificationIdentifier])
         logger.info("就寝リマインダーを解除しました")
     }
+
+    /// 録音監視が割り込み後に復帰できなかった場合にユーザーへ知らせるローカル通知を送る
+    static func sendInterruptionFailureNotification() {
+        Task {
+            await postImmediateNotification(
+                identifier: "com.sleeptalkrecorder.interruptionFailure",
+                title: String(localized: "Sleep Recording Interrupted"),
+                body: String(localized: "Monitoring could not automatically resume after an interruption. Open the app to restart.")
+            )
+        }
+    }
+
+    /// ストレージ空き容量不足で監視を停止した場合にローカル通知を送る
+    static func sendLowStorageStoppedNotification() {
+        Task {
+            await postImmediateNotification(
+                identifier: "com.sleeptalkrecorder.lowStorageStopped",
+                title: String(localized: "Sleep Recording Stopped"),
+                body: String(localized: "Monitoring was stopped because device storage is running low.")
+            )
+        }
+    }
+
+    /// 自動終了タイマーで録音が完了した朝にサマリー通知を送る
+    static func sendMorningSummaryNotification(detectedCount: Int) {
+        Task {
+            let body: String
+            if detectedCount > 0 {
+                body = String(localized: "Detected \(detectedCount) sleep-talk clip(s) overnight. Tap to listen and view your report.")
+            } else {
+                body = String(localized: "Overnight monitoring finished. No sleep talk was detected last night.")
+            }
+            await postImmediateNotification(
+                identifier: "com.sleeptalkrecorder.morningSummary",
+                title: String(localized: "Good Morning!"),
+                body: body
+            )
+        }
+    }
+
+    private static func postImmediateNotification(identifier: String, title: String, body: String) async {
+        let center = UNUserNotificationCenter.current()
+        let settings = await center.notificationSettings()
+        guard settings.authorizationStatus == .authorized || settings.authorizationStatus == .provisional else {
+            return
+        }
+        let content = UNMutableNotificationContent()
+        content.title = title
+        content.body = body
+        content.sound = .default
+
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1.0, repeats: false)
+        let request = UNNotificationRequest(identifier: identifier, content: content, trigger: trigger)
+        do {
+            try await center.add(request)
+        } catch {
+            logger.error("ローカル通知の送信に失敗しました: \(error.localizedDescription, privacy: .public)")
+        }
+    }
 }

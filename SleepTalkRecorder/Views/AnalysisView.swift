@@ -1,45 +1,63 @@
 import Charts
 import SwiftUI
 
-/// 録音された寝言データの深層心理・時間帯分布・傾向・頻出ワードを可視化する分析画面
+/// 録音された寝言データの傾向・時間帯分布・音量・頻出ワードを可視化する分析画面
 struct AnalysisView: View {
     var store: RecordingStore
+    var onStartMonitoringRequested: (() -> Void)?
 
-    private var analysis: SleepTalkAnalysis {
-        SleepTalkAnalyzer.analyze(store.recordings)
-    }
+    @State private var cachedAnalysis: SleepTalkAnalysis = SleepTalkAnalyzer.analyze([])
+    @State private var showShareSheet = false
 
     var body: some View {
         NavigationStack {
             Group {
                 if store.recordings.isEmpty {
                     ScrollView {
-                        VStack(spacing: 20) {
+                        VStack(spacing: 24) {
                             ContentUnavailableView(
                                 "No Data to Analyze",
                                 systemImage: "chart.bar.xaxis",
-                                description: Text("Once sleep talk is recorded, time trends and subconscious insights will appear here.")
+                                description: Text("Once sleep talk is recorded, time trends and self-reflection insights will appear here.")
                             )
-                            .padding(.top, 24)
+                            .padding(.top, 28)
 
-                            SleepGoodsSectionView(psychologicalNeed: nil)
-                                .padding(.horizontal)
+                            if let onStartMonitoringRequested {
+                                Button {
+                                    onStartMonitoringRequested()
+                                } label: {
+                                    Label("Go to Sleep Monitor", systemImage: "moon.stars.fill")
+                                        .font(.headline)
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 14)
+                                }
+                                .buttonStyle(.borderedProminent)
+                                .tint(.indigo)
+                                .padding(.horizontal, 24)
+                            }
                         }
                     }
                 } else {
                     ScrollView {
                         VStack(spacing: 20) {
-                            if let primaryNeed = analysis.primaryNeed {
-                                psychologyHeroCard(primaryNeed, allNeeds: analysis.psychologicalNeeds)
+                            if let primaryNeed = cachedAnalysis.primaryNeed, cachedAnalysis.hasEnoughDataForPsychology {
+                                psychologyHeroCard(primaryNeed, allNeeds: cachedAnalysis.psychologicalNeeds)
+                            } else {
+                                insufficientDataCard(transcribedCount: cachedAnalysis.transcribedCount)
                             }
-                            SleepGoodsSectionView(psychologicalNeed: analysis.primaryNeed?.type)
-                            summaryGrid(analysis)
-                            hourlyChartCard(analysis)
-                            volumeCard(analysis)
-                            if !analysis.topKeywords.isEmpty {
-                                keywordsCard(analysis)
+
+                            disclaimerBanner
+                            summaryGrid(cachedAnalysis)
+                            hourlyChartCard(cachedAnalysis)
+                            volumeCard(cachedAnalysis)
+                            if !cachedAnalysis.topKeywords.isEmpty {
+                                keywordsCard(cachedAnalysis)
                             }
-                            insightsCard(analysis)
+                            if !cachedAnalysis.insights.isEmpty {
+                                insightsCard(cachedAnalysis)
+                            }
+                            // 価値を体験したあと（録音データがある場合のみ）に1枠だけ関連グッズを表示
+                            SleepGoodsSectionView(psychologicalNeed: cachedAnalysis.primaryNeed?.type)
                         }
                         .padding()
                     }
@@ -47,22 +65,60 @@ struct AnalysisView: View {
             }
             .navigationTitle("Sleep Talk Analysis")
             .toolbar {
-                if !store.recordings.isEmpty,
-                   let cardImage = AnalysisShareCardView.renderImage(for: analysis) {
+                if !store.recordings.isEmpty {
                     ToolbarItem(placement: .topBarTrailing) {
-                        ShareLink(
-                            item: Image(uiImage: cardImage),
-                            preview: SharePreview(
-                                String(localized: "SleepTalk Psychology Report"),
-                                image: Image(uiImage: cardImage)
-                            )
-                        ) {
+                        Button {
+                            showShareSheet = true
+                        } label: {
                             Label("Share Report Card", systemImage: "square.and.arrow.up")
                         }
                     }
                 }
             }
+            .sheet(isPresented: $showShareSheet) {
+                ShareReportPreviewSheet(analysis: cachedAnalysis)
+            }
+            .task(id: store.recordings) {
+                // body評価ごとに再計算せず、recordings変更時のみバックグラウンドで解析してキャッシュする
+                let snapshot = store.recordings
+                let computed = await Task.detached(priority: .userInitiated) {
+                    SleepTalkAnalyzer.analyze(snapshot)
+                }.value
+                cachedAnalysis = computed
+            }
         }
+    }
+
+    private var disclaimerBanner: some View {
+        HStack(alignment: .top, spacing: 8) {
+            Image(systemName: "info.circle")
+                .foregroundStyle(.secondary)
+                .font(.caption)
+                .padding(.top, 2)
+            Text("These insights are for entertainment and self-reflection only and have no medical or diagnostic basis.")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 12))
+    }
+
+    private func insufficientDataCard(transcribedCount: Int) -> some View {
+        let required = SleepTalkAnalyzer.minimumTranscribedClipsForPsychology
+        return VStack(alignment: .leading, spacing: 10) {
+            Label("Collecting More Data", systemImage: "sparkles.rectangle.stack")
+                .font(.headline)
+                .foregroundStyle(.cyan)
+            Text("At least \(required) transcribed sleep-talk clips are needed to show tendency insights (currently \(transcribedCount)/\(required)). Clips without transcribed speech are excluded.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding()
+        .background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 16))
     }
 
     private func psychologyHeroCard(_ primary: PsychologicalNeedScore, allNeeds: [PsychologicalNeedScore]) -> some View {
@@ -78,7 +134,7 @@ struct AnalysisView: View {
                 }
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Subconscious Need (Estimated)")
+                    Text("Sleep Talk Tendency (Reference)")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     Text(primary.type.localizedTitle)
@@ -114,7 +170,7 @@ struct AnalysisView: View {
             }
 
             VStack(alignment: .leading, spacing: 8) {
-                Text("Psychological Needs Balance")
+                Text("Keyword Tendency Balance")
                     .font(.caption.bold())
                     .foregroundStyle(.secondary)
 
@@ -323,5 +379,64 @@ struct AnalysisView: View {
         formatter.allowedUnits = total >= 60 ? [.minute, .second] : [.second]
         formatter.unitsStyle = .abbreviated
         return formatter.string(from: TimeInterval(total)) ?? "\(total)s"
+    }
+}
+
+/// シェア前にカード内容とキーワード表示有無を確認できるプレビューシート
+private struct ShareReportPreviewSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    let analysis: SleepTalkAnalysis
+
+    @State private var includeKeywords = false
+    @State private var renderedImage: UIImage?
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 20) {
+                    AnalysisShareCardView(analysis: analysis, includeKeywords: includeKeywords)
+                        .shadow(color: .black.opacity(0.4), radius: 16, y: 8)
+
+                    if !analysis.topKeywords.isEmpty {
+                        Toggle("Include Transcribed Keywords", isOn: $includeKeywords)
+                            .padding()
+                            .background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 14))
+                    }
+
+                    if let image = renderedImage {
+                        ShareLink(
+                            item: Image(uiImage: image),
+                            message: Text("SleepTalk Report #SleepTalkReport \(AnalysisShareCardView.appStoreURL.absoluteString)"),
+                            preview: SharePreview(
+                                String(localized: "SleepTalk Report"),
+                                image: Image(uiImage: image)
+                            )
+                        ) {
+                            Label("Share Report Card", systemImage: "square.and.arrow.up")
+                                .font(.headline)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 14)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.indigo)
+                    }
+                }
+                .padding()
+            }
+            .navigationTitle("Share Preview")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Close") { dismiss() }
+                }
+            }
+            .onAppear {
+                renderedImage = AnalysisShareCardView.renderImage(for: analysis, includeKeywords: includeKeywords)
+            }
+            .onChange(of: includeKeywords) { _, newValue in
+                renderedImage = AnalysisShareCardView.renderImage(for: analysis, includeKeywords: newValue)
+            }
+        }
+        .preferredColorScheme(.dark)
     }
 }

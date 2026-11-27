@@ -3,6 +3,49 @@ import Foundation
 import OSLog
 import Observation
 
+/// 1回の睡眠モニタリングセッションの結果を保持・永続化するサマリーモデル
+struct SessionSummary: Codable, Equatable, Sendable {
+    struct InterruptionInterval: Codable, Equatable, Sendable, Identifiable {
+        let id: UUID
+        let beganAt: Date
+        let endedAt: Date?
+
+        init(id: UUID = UUID(), beganAt: Date, endedAt: Date? = nil) {
+            self.id = id
+            self.beganAt = beganAt
+            self.endedAt = endedAt
+        }
+    }
+
+    let startedAt: Date
+    let endedAt: Date
+    let detectedCount: Int
+    let endedAutomatically: Bool
+    let endedDueToLowStorage: Bool
+    let interruptions: [InterruptionInterval]
+
+    private static let storageKey = "com.sleeptalkrecorder.pendingSessionSummary"
+
+    static func loadPending(from userDefaults: UserDefaults = .standard) -> SessionSummary? {
+        guard let data = userDefaults.data(forKey: storageKey) else { return nil }
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        return try? decoder.decode(SessionSummary.self, from: data)
+    }
+
+    func savePending(to userDefaults: UserDefaults = .standard) {
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        if let data = try? encoder.encode(self) {
+            userDefaults.set(data, forKey: Self.storageKey)
+        }
+    }
+
+    static func clearPending(from userDefaults: UserDefaults = .standard) {
+        userDefaults.removeObject(forKey: storageKey)
+    }
+}
+
 /// 寝言の自動検知とバックグラウンド録音を制御するレコーダークラス
 @MainActor
 @Observable
@@ -21,6 +64,9 @@ final class SleepAudioRecorder {
         case denied
     }
 
+    /// 最低限必要な空きストレージ容量（100 MB）
+    static let minimumRequiredStorageBytes: Int64 = 100 * 1024 * 1024
+
     private(set) var state: MonitoringState = .idle
     private(set) var permissionState: PermissionState = .undetermined
     private(set) var currentDecibels: Float = -60.0
@@ -29,6 +75,9 @@ final class SleepAudioRecorder {
     private(set) var currentClipDuration: TimeInterval = 0
     private(set) var countdownEndTime: Date?
     private(set) var autoStopDate: Date?
+    private(set) var isMicTesting: Bool = false
+    private(set) var isCalibratingNoiseFloor: Bool = false
+    private(set) var pendingSessionSummary: SessionSummary?
     var errorMessage: String?
 
     var settings: RecorderSettings {
@@ -51,10 +100,16 @@ final class SleepAudioRecorder {
     private var routeChangeObserver: NSObjectProtocol?
     private var countdownTask: Task<Void, Never>?
     private var autoStopTask: Task<Void, Never>?
+    private var storageCheckTask: Task<Void, Never>?
+    private var interruptionRetryTask: Task<Void, Never>?
+    private var calibrationSamples: [Float] = []
+    private var sessionInterruptions: [SessionSummary.InterruptionInterval] = []
+    private var activeInterruptionStart: Date?
 
     init(store: RecordingStore, settings: RecorderSettings = .load()) {
         self.store = store
         self.settings = settings
+        self.pendingSessionSummary = SessionSummary.loadPending()
         refreshPermissionState()
     }
 
@@ -79,11 +134,99 @@ final class SleepAudioRecorder {
         return granted
     }
 
+    /// 未確認の朝サマリーを既読にして閉じる
+    func dismissPendingSessionSummary() {
+        pendingSessionSummary = nil
+        SessionSummary.clearPending()
+    }
+
+    // MARK: - マイクテスト・ノイズフロア自動調整
+
+    /// 録音ファイルを保存せずにマイク入力レベルだけをリアルタイム確認するテストモードを開始する
+    func startMicTest() async -> Bool {
+        guard state == .idle else { return false }
+        if isMicTesting { return true }
+
+        refreshPermissionState()
+        if permissionState == .undetermined {
+            let granted = await requestPermission()
+            guard granted else {
+                errorMessage = String(localized: "Microphone access is not permitted, so recording cannot start.")
+                return false
+            }
+        } else if permissionState == .denied {
+            errorMessage = String(localized: "Microphone access is denied. Please enable microphone permission in Settings.")
+            return false
+        }
+
+        do {
+            try configureAudioSession()
+            try startAudioEngine(detectionEnabled: false)
+            isMicTesting = true
+            logger.info("マイクテストを開始しました")
+            return true
+        } catch {
+            logger.error("マイクテスト開始エラー: \(error.localizedDescription, privacy: .public)")
+            errorMessage = String(localized: "Failed to start audio recording: \(error.localizedDescription)")
+            cleanupEngine()
+            deactivateAudioSession()
+            return false
+        }
+    }
+
+    /// マイクテストを停止する
+    func stopMicTest() {
+        guard isMicTesting else { return }
+        isMicTesting = false
+        isCalibratingNoiseFloor = false
+        calibrationSamples.removeAll()
+        cleanupEngine()
+        deactivateAudioSession()
+        currentDecibels = -60.0
+        logger.info("マイクテストを停止しました")
+    }
+
+    /// 部屋の静かな環境音を数秒間計測し、ノイズフロア + 8 dB をしきい値に自動設定する
+    @discardableResult
+    func calibrateAmbientNoise(durationSeconds: TimeInterval = 5.0) async -> Float? {
+        guard !isCalibratingNoiseFloor else { return nil }
+        let wasTesting = isMicTesting
+        if !wasTesting {
+            let started = await startMicTest()
+            guard started else { return nil }
+        }
+
+        isCalibratingNoiseFloor = true
+        calibrationSamples.removeAll()
+        try? await Task.sleep(for: .seconds(durationSeconds))
+        isCalibratingNoiseFloor = false
+
+        guard !calibrationSamples.isEmpty else {
+            if !wasTesting { stopMicTest() }
+            return nil
+        }
+
+        let sorted = calibrationSamples.sorted()
+        // 上位15%の一時的な物音を除外した85パーセンタイルを環境ノイズ基準にする
+        let p85Index = min(sorted.count - 1, max(0, Int(Double(sorted.count) * 0.85)))
+        let noiseFloor = sorted[p85Index]
+        let recommended = min(max((noiseFloor + 8.0).rounded(), -55.0), -15.0)
+        settings.thresholdDecibels = recommended
+        logger.info("環境音キャリブレーション完了: ノイズフロア \(noiseFloor) dB -> 推奨しきい値 \(recommended) dB")
+        return recommended
+    }
+
+    // MARK: - 寝言モニタリング制御
+
     /// 寝言モニタリング（自動待機・録音）を開始する
     func startMonitoring() async {
         guard state == .idle, !isStarting else { return }
         isStarting = true
         defer { isStarting = false }
+
+        if isMicTesting {
+            stopMicTest()
+        }
 
         refreshPermissionState()
         if permissionState == .undetermined {
@@ -97,27 +240,56 @@ final class SleepAudioRecorder {
             return
         }
 
+        guard hasSufficientStorage() else {
+            errorMessage = String(localized: "Not enough free storage space to start overnight recording. Please free up at least 100 MB.")
+            return
+        }
+
         if settings.transcribeForFileName {
             _ = await SpeechTranscriber.requestAuthorizationIfNeeded()
         }
 
-        if settings.startDelayMinutes > 0 {
+        // 開始遅延中でも画面ロック時にiOSにサスペンドされないよう、最初にオーディオセッションとエンジンを起動する
+        let hasDelay = settings.startDelayMinutes > 0
+        do {
+            try configureAudioSession()
+            try startAudioEngine(detectionEnabled: !hasDelay)
+            registerAudioNotifications()
+        } catch {
+            logger.error("モニタリング開始エラー: \(error.localizedDescription, privacy: .public)")
+            errorMessage = String(localized: "Failed to start audio recording: \(error.localizedDescription)")
+            cleanupEngine()
+            deactivateAudioSession()
+            state = .idle
+            return
+        }
+
+        let now = Date()
+        sessionStartTime = now
+        sessionRecordingCount = 0
+        currentClipDuration = 0
+        sessionInterruptions = []
+        activeInterruptionStart = nil
+        startPeriodicStorageCheck()
+
+        if hasDelay {
             let delaySeconds = TimeInterval(settings.startDelayMinutes * 60)
-            let targetDate = Date().addingTimeInterval(delaySeconds)
+            let targetDate = now.addingTimeInterval(delaySeconds)
             countdownEndTime = targetDate
-            sessionRecordingCount = 0
-            currentClipDuration = 0
             state = .countdown
-            logger.info("開始遅延タイマーを開始しました (\(self.settings.startDelayMinutes)分後)")
+            logger.info("開始遅延タイマーを開始しました (\(self.settings.startDelayMinutes)分後・オーディオエンジン稼働維持)")
 
             countdownTask?.cancel()
             countdownTask = Task { [weak self] in
                 try? await Task.sleep(for: .seconds(delaySeconds))
                 guard !Task.isCancelled else { return }
-                self?.beginActiveMonitoring()
+                self?.activateDetectionAfterCountdown()
             }
         } else {
-            beginActiveMonitoring()
+            countdownEndTime = nil
+            state = .monitoring
+            scheduleAutoStopIfNeeded(from: now)
+            logger.info("寝言モニタリングを開始しました (しきい値: \(self.settings.thresholdDecibels) dBFS)")
         }
     }
 
@@ -126,16 +298,20 @@ final class SleepAudioRecorder {
         guard state == .countdown else { return }
         countdownTask?.cancel()
         countdownTask = nil
-        beginActiveMonitoring()
+        activateDetectionAfterCountdown()
     }
 
     /// 寝言モニタリングを停止する
-    func stopMonitoring() {
+    func stopMonitoring(endedAutomatically: Bool = false, endedDueToLowStorage: Bool = false) {
         guard state != .idle else { return }
         countdownTask?.cancel()
         countdownTask = nil
         autoStopTask?.cancel()
         autoStopTask = nil
+        storageCheckTask?.cancel()
+        storageCheckTask = nil
+        interruptionRetryTask?.cancel()
+        interruptionRetryTask = nil
         countdownEndTime = nil
         autoStopDate = nil
 
@@ -144,33 +320,53 @@ final class SleepAudioRecorder {
         cleanupEngine()
         deactivateAudioSession()
 
+        let finishedAt = Date()
+        if let began = activeInterruptionStart {
+            sessionInterruptions.append(.init(beganAt: began, endedAt: finishedAt))
+            activeInterruptionStart = nil
+        }
+
+        let recordedCount = sessionRecordingCount
+        if let startedAt = sessionStartTime {
+            let shouldRecordSummary = recordedCount > 0 || endedAutomatically || endedDueToLowStorage || !sessionInterruptions.isEmpty
+            if shouldRecordSummary {
+                let summary = SessionSummary(
+                    startedAt: startedAt,
+                    endedAt: finishedAt,
+                    detectedCount: recordedCount,
+                    endedAutomatically: endedAutomatically,
+                    endedDueToLowStorage: endedDueToLowStorage,
+                    interruptions: sessionInterruptions
+                )
+                pendingSessionSummary = summary
+                summary.savePending()
+            }
+        }
+
         state = .idle
         currentDecibels = -60.0
         currentClipDuration = 0
         sessionStartTime = nil
-        logger.info("寝言モニタリングを停止しました")
+        sessionRecordingCount = 0
+        sessionInterruptions = []
+
+        if endedDueToLowStorage {
+            BedtimeReminderManager.sendLowStorageStoppedNotification()
+        } else if endedAutomatically {
+            BedtimeReminderManager.sendMorningSummaryNotification(detectedCount: recordedCount)
+        }
+
+        logger.info("寝言モニタリングを停止しました (自動終了: \(endedAutomatically), 空き容量不足: \(endedDueToLowStorage), 検知件数: \(recordedCount))")
     }
 
-    private func beginActiveMonitoring() {
+    private func activateDetectionAfterCountdown() {
+        guard state == .countdown else { return }
         countdownEndTime = nil
-        do {
-            try configureAudioSession()
-            try startAudioEngine()
-            registerAudioNotifications()
-
-            let now = Date()
-            sessionStartTime = now
-            sessionRecordingCount = 0
-            currentClipDuration = 0
-            state = .monitoring
-            scheduleAutoStopIfNeeded(from: now)
-            logger.info("寝言モニタリングを開始しました (しきい値: \(self.settings.thresholdDecibels) dBFS)")
-        } catch {
-            logger.error("モニタリング開始エラー: \(error.localizedDescription, privacy: .public)")
-            errorMessage = String(localized: "Failed to start audio recording: \(error.localizedDescription)")
-            cleanupEngine()
-            state = .idle
-        }
+        processor?.setDetectionEnabled(true)
+        state = .monitoring
+        let now = Date()
+        scheduleAutoStopIfNeeded(from: now)
+        logger.info("開始遅延が終了したため音声検知を有効化しました")
     }
 
     private func scheduleAutoStopIfNeeded(from startDate: Date) {
@@ -185,7 +381,37 @@ final class SleepAudioRecorder {
             try? await Task.sleep(for: .seconds(durationSeconds))
             guard !Task.isCancelled else { return }
             self?.logger.info("自動終了タイマーに到達したためモニタリングを停止します")
-            self?.stopMonitoring()
+            self?.stopMonitoring(endedAutomatically: true)
+        }
+    }
+
+    // MARK: - ストレージ空き容量チェック
+
+    private func hasSufficientStorage() -> Bool {
+        do {
+            let values = try store.directoryURL.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey])
+            if let available = values.volumeAvailableCapacityForImportantUsage {
+                return available >= Self.minimumRequiredStorageBytes
+            }
+        } catch {
+            logger.warning("空き容量チェックに失敗しました: \(error.localizedDescription, privacy: .public)")
+        }
+        return true
+    }
+
+    private func startPeriodicStorageCheck() {
+        storageCheckTask?.cancel()
+        storageCheckTask = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(30))
+                guard !Task.isCancelled, let self, self.state != .idle else { break }
+                if !self.hasSufficientStorage() {
+                    self.logger.error("ストレージ空き容量が不足したためモニタリングを安全停止します")
+                    self.errorMessage = String(localized: "Monitoring stopped because device storage is running low.")
+                    self.stopMonitoring(endedAutomatically: true, endedDueToLowStorage: true)
+                    break
+                }
+            }
         }
     }
 
@@ -209,7 +435,7 @@ final class SleepAudioRecorder {
         }
     }
 
-    private func startAudioEngine() throws {
+    private func startAudioEngine(detectionEnabled: Bool) throws {
         let engine = AVAudioEngine()
         let inputNode = engine.inputNode
         let inputFormat = inputNode.outputFormat(forBus: 0)
@@ -226,12 +452,25 @@ final class SleepAudioRecorder {
             inputFormat: inputFormat,
             directoryURL: store.directoryURL,
             settings: settings,
+            detectionEnabled: detectionEnabled,
             onLevelUpdate: { [weak self] decibels, isRecording, clipDuration in
                 Task { @MainActor [weak self] in
-                    guard let self, self.state != .idle, self.state != .interrupted else { return }
-                    let targetState: MonitoringState = isRecording ? .recording : .monitoring
-                    if self.state != targetState {
-                        self.state = targetState
+                    guard let self else { return }
+                    if self.isCalibratingNoiseFloor {
+                        self.calibrationSamples.append(decibels)
+                    }
+                    if self.isMicTesting {
+                        if abs(self.currentDecibels - decibels) >= 0.3 {
+                            self.currentDecibels = decibels
+                        }
+                        return
+                    }
+                    guard self.state != .idle, self.state != .interrupted else { return }
+                    if self.state != .countdown {
+                        let targetState: MonitoringState = isRecording ? .recording : .monitoring
+                        if self.state != targetState {
+                            self.state = targetState
+                        }
                     }
                     if abs(self.currentDecibels - decibels) >= 0.4 {
                         self.currentDecibels = decibels
@@ -249,7 +488,11 @@ final class SleepAudioRecorder {
 
                     if self.settings.transcribeForFileName {
                         let fileURL = self.store.fileURL(for: item)
-                        if let transcript = await SpeechTranscriber.transcribe(fileURL: fileURL) {
+                        let allowServer = self.settings.allowServerSpeechRecognition
+                        if let transcript = await SpeechTranscriber.transcribe(
+                            fileURL: fileURL,
+                            allowServerRecognition: allowServer
+                        ) {
                             self.store.updateTranscript(for: item.id, transcript: transcript)
                         }
                     }
@@ -333,44 +576,74 @@ final class SleepAudioRecorder {
         switch type {
         case .began:
             logger.info("オーディオ割り込みが発生しました")
+            interruptionRetryTask?.cancel()
+            interruptionRetryTask = nil
             processor?.finalizeIfNeeded()
             cleanupEngine()
             if state != .idle {
+                if activeInterruptionStart == nil {
+                    activeInterruptionStart = Date()
+                }
                 state = .interrupted
             }
         case .ended:
-            logger.info("オーディオ割り込みが終了しました")
+            logger.info("オーディオ割り込みが終了しました (shouldResume: \(options.contains(.shouldResume)))")
             guard state == .interrupted else { return }
-            if options.contains(.shouldResume) {
-                do {
-                    try configureAudioSession()
-                    try startAudioEngine()
-                    state = .monitoring
-                } catch {
-                    logger.error("割り込み後の再開に失敗しました: \(error.localizedDescription, privacy: .public)")
-                    errorMessage = String(localized: "Failed to resume recording after interruption.")
-                    state = .idle
-                }
-            }
+            // shouldResume の有無にかかわらず段階的にリトライし、朝まで止まりっぱなしを防ぐ
+            attemptResumeAfterInterruption(immediate: options.contains(.shouldResume))
         @unknown default:
             break
+        }
+    }
+
+    private func attemptResumeAfterInterruption(immediate: Bool) {
+        interruptionRetryTask?.cancel()
+        let retryDelays: [TimeInterval] = immediate ? [0.5, 3.0, 8.0] : [2.0, 5.0, 10.0]
+
+        interruptionRetryTask = Task { [weak self] in
+            guard let self else { return }
+            for (attempt, delay) in retryDelays.enumerated() {
+                try? await Task.sleep(for: .seconds(delay))
+                guard !Task.isCancelled, self.state == .interrupted else { return }
+
+                let stillCountingDown = (self.countdownEndTime ?? .distantPast) > Date()
+                do {
+                    try self.configureAudioSession()
+                    try self.startAudioEngine(detectionEnabled: !stillCountingDown)
+                    if let began = self.activeInterruptionStart {
+                        self.sessionInterruptions.append(.init(beganAt: began, endedAt: Date()))
+                        self.activeInterruptionStart = nil
+                    }
+                    self.state = stillCountingDown ? .countdown : .monitoring
+                    self.logger.info("割り込み後の自動復帰に成功しました (試行 \(attempt + 1) 回目)")
+                    return
+                } catch {
+                    self.logger.warning("割り込み後の再開リトライ \(attempt + 1) 回目失敗: \(error.localizedDescription, privacy: .public)")
+                }
+            }
+
+            // 全リトライ失敗時はローカル通知とエラーメッセージで必ずユーザーに知らせる
+            self.logger.error("割り込み後の再開リトライがすべて失敗しました")
+            self.errorMessage = String(localized: "Failed to resume recording after interruption.")
+            BedtimeReminderManager.sendInterruptionFailureNotification()
         }
     }
 
     private func handleRouteChange(reason: AVAudioSession.RouteChangeReason) {
         // オーディオ入力デバイスの抜き差し時に入力フォーマットが変わる可能性があるため再起動する
         if reason == .oldDeviceUnavailable || reason == .newDeviceAvailable {
-            guard state == .monitoring || state == .recording else { return }
+            guard state == .monitoring || state == .recording || state == .countdown else { return }
+            let wasCountdown = state == .countdown
             logger.info("オーディオルート変更を検知したためエンジンを再構成します")
             processor?.finalizeIfNeeded()
             cleanupEngine()
             do {
-                try startAudioEngine()
-                state = .monitoring
+                try startAudioEngine(detectionEnabled: !wasCountdown)
+                state = wasCountdown ? .countdown : .monitoring
             } catch {
                 logger.error("ルート変更後の再起動に失敗しました: \(error.localizedDescription, privacy: .public)")
                 errorMessage = String(localized: "Could not resume recording after audio route change.")
-                state = .idle
+                stopMonitoring()
             }
         }
     }
@@ -387,6 +660,7 @@ private final class AudioStreamProcessor: @unchecked Sendable {
 
     private var detector: VoiceActivityDetector
     private var ringBuffer: AudioRingBuffer<AVAudioPCMBuffer>
+    private var isDetectionEnabled: Bool
     private var activeFile: AVAudioFile?
     private var activeFileURL: URL?
     private var activeFileName: String?
@@ -401,6 +675,7 @@ private final class AudioStreamProcessor: @unchecked Sendable {
         inputFormat: AVAudioFormat,
         directoryURL: URL,
         settings: RecorderSettings,
+        detectionEnabled: Bool = true,
         onLevelUpdate: @escaping @Sendable (Float, Bool, TimeInterval) -> Void,
         onRecordingSaved: @escaping @Sendable (RecordingItem) -> Void,
         onError: @escaping @Sendable (String) -> Void
@@ -408,6 +683,7 @@ private final class AudioStreamProcessor: @unchecked Sendable {
         self.inputFormat = inputFormat
         self.directoryURL = directoryURL
         self.detector = VoiceActivityDetector(settings: settings)
+        self.isDetectionEnabled = detectionEnabled
         let maxPreRollFrames = Int(inputFormat.sampleRate * settings.preRollSeconds)
         self.ringBuffer = AudioRingBuffer(maxFrames: maxPreRollFrames)
         self.onLevelUpdate = onLevelUpdate
@@ -420,6 +696,16 @@ private final class AudioStreamProcessor: @unchecked Sendable {
         inputNode.installTap(onBus: 0, bufferSize: 4096, format: format) { [weak self] buffer, _ in
             guard let self, let copied = buffer.copyPCMBuffer() else { return }
             self.enqueue(SendablePCMBuffer(buffer: copied))
+        }
+    }
+
+    func setDetectionEnabled(_ enabled: Bool) {
+        queue.async { [weak self] in
+            guard let self else { return }
+            self.isDetectionEnabled = enabled
+            if !enabled {
+                self.ringBuffer.clear()
+            }
         }
     }
 
@@ -458,8 +744,14 @@ private final class AudioStreamProcessor: @unchecked Sendable {
 
         let samples = UnsafeBufferPointer(start: channelData[0], count: frameLength)
         let decibels = VoiceActivityDetector.calculateDecibels(samples: samples)
-        let bufferDuration = Double(frameLength) / inputFormat.sampleRate
 
+        // 開始遅延中・マイクテスト中はレベル更新のみ行い、録音検知はスキップする
+        guard isDetectionEnabled else {
+            onLevelUpdate(decibels, false, 0)
+            return
+        }
+
+        let bufferDuration = Double(frameLength) / inputFormat.sampleRate
         let previousPeak = detector.peakDecibels
         let action = detector.process(decibels: decibels, bufferDuration: bufferDuration)
 
@@ -473,11 +765,18 @@ private final class AudioStreamProcessor: @unchecked Sendable {
             onLevelUpdate(decibels, true, recordedDuration)
 
         case .continueRecording:
-            writeBufferToActiveFile(buffer, duration: bufferDuration)
-            onLevelUpdate(decibels, true, recordedDuration)
+            let wrote = writeBufferToActiveFile(buffer, duration: bufferDuration)
+            if !wrote {
+                // 書き込み失敗時は現在までのクリップを確定し、異常状態をUIへ通知する
+                finishRecordingFile(shouldSave: recordedDuration >= detector.settings.minimumDurationSeconds, peakDecibels: max(previousPeak, decibels))
+                detector.reset()
+                onLevelUpdate(decibels, false, 0)
+            } else {
+                onLevelUpdate(decibels, true, recordedDuration)
+            }
 
         case .finishRecording(let shouldSave):
-            writeBufferToActiveFile(buffer, duration: bufferDuration)
+            _ = writeBufferToActiveFile(buffer, duration: bufferDuration)
             let peak = max(previousPeak, decibels)
             finishRecordingFile(shouldSave: shouldSave, peakDecibels: peak)
             onLevelUpdate(decibels, false, 0)
@@ -530,13 +829,17 @@ private final class AudioStreamProcessor: @unchecked Sendable {
         }
     }
 
-    private func writeBufferToActiveFile(_ buffer: AVAudioPCMBuffer, duration: TimeInterval) {
-        guard let activeFile else { return }
+    @discardableResult
+    private func writeBufferToActiveFile(_ buffer: AVAudioPCMBuffer, duration: TimeInterval) -> Bool {
+        guard let activeFile else { return false }
         do {
             try activeFile.write(from: buffer)
             recordedDuration += duration
+            return true
         } catch {
             logger.error("音声バッファ書き込みエラー: \(error.localizedDescription, privacy: .public)")
+            onError(String(localized: "An error occurred while writing audio data. Please check available storage."))
+            return false
         }
     }
 

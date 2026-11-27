@@ -1,16 +1,18 @@
-import StoreKit
 import SwiftUI
 import UIKit
 
-/// 睡眠中の自動録音待機・状態表示・制御を行うメインモニター画面
+/// 睡眠中の自動録音待機・状態表示・マイクテスト・朝サマリーを扱うメインモニター画面
 struct MonitorView: View {
-    @Environment(\.requestReview) private var requestReview
-
     @Bindable var recorder: SleepAudioRecorder
     var playbackManager: AudioPlaybackManager
     var totalRecordingsCount: Int
-    @State private var isNightDimmed = false
-    @State private var sessionSummaryCount: Int?
+    @Binding var isNightDimmed: Bool
+    var onOpenRecordings: () -> Void
+    var onOnboardingCompleted: () -> Void
+
+    @AppStorage("com.sleeptalkrecorder.hasCompletedOnboarding") private var hasCompletedOnboarding = false
+    @State private var showOnboarding = false
+    @State private var calibrationBannerMessage: String?
 
     var body: some View {
         NavigationStack {
@@ -18,7 +20,7 @@ struct MonitorView: View {
                 Color.black.ignoresSafeArea()
 
                 ScrollView {
-                    VStack(spacing: 24) {
+                    VStack(spacing: 22) {
                         statusHeader
                         if recorder.state == .countdown, let endTime = recorder.countdownEndTime {
                             countdownCard(until: endTime)
@@ -33,10 +35,6 @@ struct MonitorView: View {
                     }
                     .padding()
                 }
-
-                if isNightDimmed && recorder.state != .idle {
-                    nightDimOverlay
-                }
             }
             .navigationTitle("Sleep Monitor")
             .navigationBarTitleDisplayMode(.inline)
@@ -49,6 +47,24 @@ struct MonitorView: View {
                             Label("Night Display", systemImage: "moon.fill")
                         }
                     }
+                } else if recorder.state == .idle {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button {
+                            showOnboarding = true
+                        } label: {
+                            Label("Setup Guide", systemImage: "questionmark.circle")
+                        }
+                    }
+                }
+            }
+            .onAppear {
+                if !hasCompletedOnboarding {
+                    showOnboarding = true
+                }
+            }
+            .onDisappear {
+                if recorder.isMicTesting {
+                    recorder.stopMicTest()
                 }
             }
             .alert(
@@ -62,23 +78,43 @@ struct MonitorView: View {
             } message: {
                 Text(recorder.errorMessage ?? "")
             }
-            .alert(
-                "Good Morning!",
-                isPresented: Binding(
-                    get: { sessionSummaryCount != nil },
-                    set: { if !$0 { sessionSummaryCount = nil } }
-                )
-            ) {
-                Button("OK", role: .cancel) {
-                    if ReviewPromptManager.shouldRequestReview(totalRecordingsCount: totalRecordingsCount) {
-                        ReviewPromptManager.markPromptShown()
-                        requestReview()
+            .sheet(isPresented: $showOnboarding, onDismiss: {
+                if recorder.isMicTesting {
+                    recorder.stopMicTest()
+                }
+                if !hasCompletedOnboarding {
+                    hasCompletedOnboarding = true
+                }
+                onOnboardingCompleted()
+            }) {
+                OnboardingSheet(recorder: recorder) {
+                    hasCompletedOnboarding = true
+                    showOnboarding = false
+                }
+            }
+            .sheet(
+                item: Binding(
+                    get: {
+                        recorder.pendingSessionSummary.map { IdentifiableSessionSummary(summary: $0) }
+                    },
+                    set: { newValue in
+                        if newValue == nil {
+                            recorder.dismissPendingSessionSummary()
+                        }
                     }
-                }
-            } message: {
-                if let count = sessionSummaryCount {
-                    Text("Detected \(count) sleep-talk clip(s) during this session. Check the Recordings and Analysis tabs!")
-                }
+                )
+            ) { wrapper in
+                MorningSummarySheet(
+                    summary: wrapper.summary,
+                    recorder: recorder,
+                    onViewRecordings: {
+                        recorder.dismissPendingSessionSummary()
+                        onOpenRecordings()
+                    },
+                    onClose: {
+                        recorder.dismissPendingSessionSummary()
+                    }
+                )
             }
             .onChange(of: recorder.state) { _, newState in
                 if newState == .idle {
@@ -98,7 +134,7 @@ struct MonitorView: View {
                 Image(systemName: statusIconName)
                     .font(.system(size: 44))
                     .foregroundStyle(statusColor)
-                    .symbolEffect(.pulse, isActive: recorder.state == .recording)
+                    .symbolEffect(.pulse, isActive: recorder.state == .recording || recorder.isMicTesting)
             }
 
             Text(statusTitle)
@@ -110,6 +146,7 @@ struct MonitorView: View {
                 .multilineTextAlignment(.center)
         }
         .padding(.top, 8)
+        .accessibilityElement(children: .combine)
     }
 
     private func countdownCard(until endTime: Date) -> some View {
@@ -211,6 +248,62 @@ struct MonitorView: View {
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }
+
+            if recorder.state == .idle {
+                HStack(spacing: 10) {
+                    Button {
+                        if recorder.isMicTesting {
+                            recorder.stopMicTest()
+                        } else {
+                            playbackManager.stop()
+                            Task { _ = await recorder.startMicTest() }
+                        }
+                    } label: {
+                        Label(
+                            recorder.isMicTesting ? "Stop Test" : "Mic Test",
+                            systemImage: recorder.isMicTesting ? "stop.circle.fill" : "waveform"
+                        )
+                        .font(.caption.weight(.semibold))
+                        .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(recorder.isMicTesting ? .orange : .cyan)
+
+                    Button {
+                        playbackManager.stop()
+                        calibrationBannerMessage = nil
+                        Task {
+                            if let recommended = await recorder.calibrateAmbientNoise(durationSeconds: 5.0) {
+                                calibrationBannerMessage = String(localized: "Recommended threshold set to \(Int(recommended)) dB.")
+                            }
+                        }
+                    } label: {
+                        if recorder.isCalibratingNoiseFloor {
+                            HStack(spacing: 6) {
+                                ProgressView()
+                                    .controlSize(.small)
+                                Text("Measuring...")
+                            }
+                            .font(.caption.weight(.semibold))
+                            .frame(maxWidth: .infinity)
+                        } else {
+                            Label("Auto-Calibrate (5s)", systemImage: "wand.and.stars")
+                                .font(.caption.weight(.semibold))
+                                .frame(maxWidth: .infinity)
+                        }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.indigo)
+                    .disabled(recorder.isCalibratingNoiseFloor)
+                }
+
+                if let msg = calibrationBannerMessage {
+                    Text(msg)
+                        .font(.caption2)
+                        .foregroundStyle(.mint)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
         }
         .padding()
         .background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 16))
@@ -265,11 +358,7 @@ struct MonitorView: View {
                     }
                 }
             } else {
-                let recordedCount = recorder.sessionRecordingCount
                 recorder.stopMonitoring()
-                if recordedCount > 0 {
-                    sessionSummaryCount = recordedCount
-                }
             }
         } label: {
             HStack(spacing: 10) {
@@ -286,35 +375,8 @@ struct MonitorView: View {
         .padding(.top, 4)
     }
 
-    private var nightDimOverlay: some View {
-        Color.black.opacity(0.92)
-            .ignoresSafeArea()
-            .overlay {
-                VStack(spacing: 20) {
-                    Image(systemName: recorder.state == .recording ? "waveform" : "moon.zzz.fill")
-                        .font(.system(size: 48))
-                        .foregroundStyle(recorder.state == .recording ? .red.opacity(0.75) : .indigo.opacity(0.6))
-
-                    Text(recorder.state == .recording ? "Recording sleep talk..." : "Monitoring overnight")
-                        .font(.headline)
-                        .foregroundStyle(.white.opacity(0.5))
-
-                    Text("Detected: \(recorder.sessionRecordingCount) clips")
-                        .font(.subheadline.monospacedDigit())
-                        .foregroundStyle(.white.opacity(0.35))
-
-                    Text("Tap anywhere to return to normal view")
-                        .font(.caption)
-                        .foregroundStyle(.white.opacity(0.25))
-                        .padding(.top, 24)
-                }
-            }
-            .onTapGesture {
-                isNightDimmed = false
-            }
-    }
-
     private var statusColor: Color {
+        if recorder.isMicTesting { return .mint }
         switch recorder.state {
         case .idle: return .indigo
         case .countdown: return .yellow
@@ -325,6 +387,7 @@ struct MonitorView: View {
     }
 
     private var statusIconName: String {
+        if recorder.isMicTesting { return "waveform.badge.mic" }
         switch recorder.state {
         case .idle: return "moon.zzz"
         case .countdown: return "timer"
@@ -335,6 +398,9 @@ struct MonitorView: View {
     }
 
     private var statusTitle: String {
+        if recorder.isMicTesting {
+            return String(localized: "Mic Test Active")
+        }
         switch recorder.state {
         case .idle:
             return String(localized: "Standby")
@@ -351,6 +417,9 @@ struct MonitorView: View {
     }
 
     private var statusSubtitle: String {
+        if recorder.isMicTesting {
+            return String(localized: "Speak or stay quiet to check the meter and tune the yellow threshold line.")
+        }
         switch recorder.state {
         case .idle:
             return String(localized: "Tap the button before sleeping to automatically record only sleep talk.")
@@ -361,7 +430,7 @@ struct MonitorView: View {
         case .recording:
             return String(localized: "Recording stops and saves automatically after silence.")
         case .interrupted:
-            return String(localized: "Paused due to a phone call or alarm.")
+            return String(localized: "Paused due to a phone call or alarm. Attempting automatic resume...")
         }
     }
 
@@ -371,5 +440,292 @@ struct MonitorView: View {
         let minutes = (total % 3600) / 60
         let seconds = total % 60
         return String(format: "%02d:%02d:%02d", hours, minutes, seconds)
+    }
+}
+
+private struct IdentifiableSessionSummary: Identifiable {
+    let id = UUID()
+    let summary: SessionSummary
+}
+
+/// 朝のセッション結果サマリーシート（手動・自動停止の両方に対応、中断履歴＆リマインダー提案付き）
+private struct MorningSummarySheet: View {
+    let summary: SessionSummary
+    @Bindable var recorder: SleepAudioRecorder
+    let onViewRecordings: () -> Void
+    let onClose: () -> Void
+
+    @State private var reminderScheduledMessage: String?
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 20) {
+                    Image(systemName: summary.detectedCount > 0 ? "sun.max.fill" : "moon.stars.fill")
+                        .font(.system(size: 54))
+                        .foregroundStyle(summary.detectedCount > 0 ? .yellow : .indigo)
+                        .padding(.top, 12)
+
+                    Text("Good Morning!")
+                        .font(.title.bold())
+
+                    VStack(spacing: 8) {
+                        Text("\(summary.detectedCount) clips")
+                            .font(.system(size: 34, weight: .bold, design: .rounded).monospacedDigit())
+                            .foregroundStyle(.cyan)
+                        Text(
+                            "\(summary.startedAt.formatted(date: .omitted, time: .shortened)) - \(summary.endedAt.formatted(date: .omitted, time: .shortened))"
+                        )
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+
+                        if summary.endedAutomatically {
+                            Text("Ended automatically by timer")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 16))
+
+                    if summary.endedDueToLowStorage {
+                        Label(
+                            "Stopped early because device storage was running low.",
+                            systemImage: "exclamationmark.triangle.fill"
+                        )
+                        .font(.subheadline)
+                        .foregroundStyle(.orange)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding()
+                        .background(Color.orange.opacity(0.12), in: RoundedRectangle(cornerRadius: 14))
+                    }
+
+                    if !summary.interruptions.isEmpty {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Label("Interruptions During Session", systemImage: "pause.circle.fill")
+                                .font(.subheadline.bold())
+                                .foregroundStyle(.orange)
+                            ForEach(summary.interruptions) { item in
+                                let startText = item.beganAt.formatted(date: .omitted, time: .shortened)
+                                let endText = item.endedAt?.formatted(date: .omitted, time: .shortened) ?? "--"
+                                Text("• \(startText) – \(endText)")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding()
+                        .background(Color.orange.opacity(0.1), in: RoundedRectangle(cornerRadius: 14))
+                    }
+
+                    // リマインダー未設定の場合は毎晩の継続を促すワンタップ提案を表示
+                    if !recorder.settings.bedtimeReminderEnabled {
+                        VStack(alignment: .leading, spacing: 10) {
+                            Label("Don't Forget Tomorrow Night", systemImage: "bell.badge.fill")
+                                .font(.subheadline.bold())
+                                .foregroundStyle(.yellow)
+                            Text("Enable a daily bedtime reminder so you never miss recording your sleep talk.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Button {
+                                Task {
+                                    let scheduled = await BedtimeReminderManager.scheduleDailyReminder(
+                                        hour: recorder.settings.bedtimeReminderHour,
+                                        minute: recorder.settings.bedtimeReminderMinute
+                                    )
+                                    if scheduled {
+                                        recorder.settings.bedtimeReminderEnabled = true
+                                        reminderScheduledMessage = String(localized: "Daily bedtime reminder enabled!")
+                                    } else {
+                                        reminderScheduledMessage = String(localized: "Notifications are disabled in system Settings.")
+                                    }
+                                }
+                            } label: {
+                                Label("Enable Daily Reminder (23:00)", systemImage: "bell.fill")
+                                    .font(.subheadline.weight(.semibold))
+                                    .frame(maxWidth: .infinity)
+                            }
+                            .buttonStyle(.bordered)
+                            .tint(.yellow)
+
+                            if let msg = reminderScheduledMessage {
+                                Text(msg)
+                                    .font(.caption2)
+                                    .foregroundStyle(.mint)
+                            }
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding()
+                        .background(Color.yellow.opacity(0.08), in: RoundedRectangle(cornerRadius: 14))
+                    }
+
+                    VStack(spacing: 12) {
+                        if summary.detectedCount > 0 {
+                            Button {
+                                onViewRecordings()
+                            } label: {
+                                Label("Listen to Recordings", systemImage: "play.circle.fill")
+                                    .font(.headline)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 14)
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .tint(.indigo)
+                        }
+
+                        Button("Close") {
+                            onClose()
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
+                    }
+                }
+                .padding()
+            }
+            .navigationTitle("Session Summary")
+            .navigationBarTitleDisplayMode(.inline)
+        }
+        .preferredColorScheme(.dark)
+    }
+}
+
+/// 初回起動時に価値説明と5秒マイクテスト（しきい値自動調整）を行うオンボーディングシート
+private struct OnboardingSheet: View {
+    @Bindable var recorder: SleepAudioRecorder
+    let onFinish: () -> Void
+
+    @State private var calibrationMessage: String?
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 22) {
+                    Image(systemName: "moon.stars.fill")
+                        .font(.system(size: 56))
+                        .foregroundStyle(.cyan)
+                        .padding(.top, 16)
+
+                    VStack(spacing: 8) {
+                        Text("Welcome to SleepTalk")
+                            .font(.title2.bold())
+                        Text("Automatically records only your sleep talk overnight while skipping hours of silence.")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                    }
+
+                    VStack(alignment: .leading, spacing: 14) {
+                        onboardingStep(
+                            icon: "mic.fill",
+                            color: .cyan,
+                            title: String(localized: "1. Test Your Room Volume"),
+                            detail: String(localized: "Measure 5 seconds of quiet room noise so the app sets the ideal threshold automatically.")
+                        )
+                        onboardingStep(
+                            icon: "lock.fill",
+                            color: .indigo,
+                            title: String(localized: "2. Lock Screen & Sleep"),
+                            detail: String(localized: "Plug in your charger, start monitoring, and lock your screen. Recordings stay privately on your iPhone.")
+                        )
+                        onboardingStep(
+                            icon: "sparkles",
+                            color: .yellow,
+                            title: String(localized: "3. Check Your Morning Report"),
+                            detail: String(localized: "Listen to clips, view transcriptions, and explore fun self-reflection insights.")
+                        )
+                    }
+                    .padding()
+                    .background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 16))
+
+                    VStack(spacing: 12) {
+                        LevelMeterView(
+                            decibels: recorder.currentDecibels,
+                            thresholdDecibels: recorder.settings.thresholdDecibels,
+                            isRecording: false
+                        )
+
+                        Button {
+                            calibrationMessage = nil
+                            Task {
+                                if let recommended = await recorder.calibrateAmbientNoise(durationSeconds: 5.0) {
+                                    calibrationMessage = String(localized: "Ideal threshold set to \(Int(recommended)) dB!")
+                                }
+                            }
+                        } label: {
+                            if recorder.isCalibratingNoiseFloor {
+                                HStack(spacing: 8) {
+                                    ProgressView()
+                                        .controlSize(.small)
+                                    Text("Measuring room silence (5s)...")
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 12)
+                            } else {
+                                Label("Run 5-Second Mic Calibration", systemImage: "wand.and.stars")
+                                    .font(.headline)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 12)
+                            }
+                        }
+                        .buttonStyle(.bordered)
+                        .tint(.cyan)
+                        .disabled(recorder.isCalibratingNoiseFloor)
+
+                        if let calibrationMessage {
+                            Text(calibrationMessage)
+                                .font(.caption)
+                                .foregroundStyle(.mint)
+                        }
+                    }
+                    .padding()
+                    .background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 16))
+
+                    Button {
+                        if recorder.isMicTesting {
+                            recorder.stopMicTest()
+                        }
+                        onFinish()
+                    } label: {
+                        Text("Get Started")
+                            .font(.headline)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.indigo)
+                }
+                .padding()
+            }
+            .navigationTitle("Quick Setup")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Skip") {
+                        if recorder.isMicTesting {
+                            recorder.stopMicTest()
+                        }
+                        onFinish()
+                    }
+                }
+            }
+        }
+        .preferredColorScheme(.dark)
+    }
+
+    private func onboardingStep(icon: String, color: Color, title: String, detail: String) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: icon)
+                .font(.title3)
+                .foregroundStyle(color)
+                .frame(width: 28)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.subheadline.bold())
+                Text(detail)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
     }
 }

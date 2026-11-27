@@ -1,8 +1,11 @@
+import StoreKit
 import SwiftUI
 
 /// 録音された寝言クリップの日付別一覧・お気に入り・再生・削除・共有を行う画面
 struct RecordingsListView: View {
-    var store: RecordingStore
+    @Environment(\.requestReview) private var requestReview
+
+    @Bindable var store: RecordingStore
     @Bindable var playbackManager: AudioPlaybackManager
     var isMonitoring: Bool
 
@@ -78,6 +81,9 @@ struct RecordingsListView: View {
                 }
             }
             .navigationTitle("Recordings (\(store.recordings.count))")
+            .onAppear {
+                store.markAllAsRead()
+            }
             .toolbar {
                 if !store.recordings.isEmpty {
                     ToolbarItem(placement: .topBarTrailing) {
@@ -96,6 +102,7 @@ struct RecordingsListView: View {
                             }
                         } label: {
                             Image(systemName: "ellipsis.circle")
+                                .accessibilityLabel(Text("More Options"))
                         }
                     }
                 }
@@ -141,35 +148,58 @@ struct RecordingsListView: View {
             } message: {
                 Text(playbackManager.errorMessage ?? "")
             }
+            .alert(
+                "Storage Notice",
+                isPresented: Binding(
+                    get: { store.lastErrorMessage != nil },
+                    set: { if !$0 { store.lastErrorMessage = nil } }
+                )
+            ) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(store.lastErrorMessage ?? "")
+            }
         }
     }
 
     @ViewBuilder
     private func recordingRow(for item: RecordingItem) -> some View {
         let isSelected = playbackManager.currentPlayingID == item.id
+        let isPlayingThis = isSelected && playbackManager.isPlaying
         let fileURL = store.fileURL(for: item)
+        let hasTranscript = !(item.transcript?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true)
 
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 12) {
                 Button {
+                    let wasPlaying = isPlayingThis
                     playbackManager.togglePlayback(for: item, fileURL: fileURL)
+                    // 録音を実際に再生したタイミングで自然なレビュー依頼条件をチェックする
+                    if !wasPlaying, ReviewPromptManager.shouldRequestReview(totalRecordingsCount: store.recordings.count) {
+                        ReviewPromptManager.markPromptShown()
+                        requestReview()
+                    }
                 } label: {
-                    Image(systemName: (isSelected && playbackManager.isPlaying) ? "pause.circle.fill" : "play.circle.fill")
+                    Image(systemName: isPlayingThis ? "pause.circle.fill" : "play.circle.fill")
                         .font(.system(size: 36))
                         .foregroundStyle(isMonitoring ? .gray : .indigo)
                 }
                 .buttonStyle(.plain)
                 .disabled(isMonitoring)
+                .accessibilityLabel(Text(isPlayingThis ? "Pause" : "Play"))
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(item.displayTitle)
                         .font(.headline)
                         .lineLimit(2)
 
-                    Text(item.fileName)
-                        .font(.caption2)
-                        .foregroundStyle(.cyan.opacity(0.85))
-                        .lineLimit(1)
+                    // 文字起こしがある場合は重複するファイル名表示を省き、すっきり表示する
+                    if !hasTranscript {
+                        Text(item.fileName)
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
 
                     HStack(spacing: 12) {
                         Label(item.formattedTimeOnly, systemImage: "clock.badge")
@@ -190,6 +220,7 @@ struct RecordingsListView: View {
                         .foregroundStyle(item.isFavorite ? .yellow : .secondary)
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel(Text(item.isFavorite ? "Remove from Favorites" : "Add to Favorites"))
 
                 if FileManager.default.fileExists(atPath: fileURL.path) {
                     ShareLink(item: fileURL) {
@@ -198,6 +229,7 @@ struct RecordingsListView: View {
                             .foregroundStyle(.secondary)
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel(Text("Share Audio Clip"))
                 }
             }
 

@@ -63,6 +63,11 @@ struct LevelMeterView: View {
             .font(.caption2.monospacedDigit())
             .foregroundStyle(.secondary)
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text("Mic Input Level"))
+        .accessibilityValue(
+            Text("Current \(Int(clampedDb.rounded())) dB, threshold \(Int(thresholdDecibels.rounded())) dB")
+        )
     }
 
     private var clampedDb: Float {

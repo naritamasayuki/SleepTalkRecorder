@@ -178,4 +178,73 @@ final class RecordingStoreTests: XCTestCase {
         XCTAssertEqual(sections[0].items.map(\.fileName), ["3.m4a", "2.m4a"])
         XCTAssertEqual(sections[1].items.map(\.fileName), ["1.m4a"])
     }
+
+    func testRecoversValidEntriesWhenOneJsonItemIsCorrupt() throws {
+        let tempDirectory = try makeTempDirectory()
+        defer { try? FileManager.default.removeItem(at: tempDirectory) }
+
+        let validFileURL = tempDirectory.appendingPathComponent("valid.m4a")
+        try Data("audio".utf8).write(to: validFileURL)
+
+        let partialCorruptJSON = """
+        [
+          {
+            "id": "11111111-1111-1111-1111-111111111111",
+            "fileName": "valid.m4a",
+            "createdAt": "2026-11-27T01:00:00Z",
+            "duration": 3.2,
+            "peakDecibels": -22.0,
+            "isFavorite": true
+          },
+          {
+            "brokenField": 12345
+          }
+        ]
+        """
+        try Data(partialCorruptJSON.utf8).write(to: tempDirectory.appendingPathComponent("recordings.json"))
+
+        let store = RecordingStore(directoryURL: tempDirectory)
+        XCTAssertEqual(store.recordings.count, 1)
+        XCTAssertEqual(store.recordings.first?.fileName, "valid.m4a")
+        XCTAssertEqual(store.recordings.first?.isFavorite, true)
+        XCTAssertNotNil(store.lastErrorMessage)
+    }
+
+    func testBacksUpCorruptJsonAndRecoversOrphanedM4A() throws {
+        let tempDirectory = try makeTempDirectory()
+        defer { try? FileManager.default.removeItem(at: tempDirectory) }
+
+        let orphanURL = tempDirectory.appendingPathComponent("sleeptalk_orphan.m4a")
+        try Data("orphan audio".utf8).write(to: orphanURL)
+        try Data("{ invalid json !!!".utf8).write(to: tempDirectory.appendingPathComponent("recordings.json"))
+
+        let store = RecordingStore(directoryURL: tempDirectory)
+        XCTAssertEqual(store.recordings.count, 1)
+        XCTAssertEqual(store.recordings.first?.fileName, "sleeptalk_orphan.m4a")
+        XCTAssertTrue(FileManager.default.fileExists(atPath: tempDirectory.appendingPathComponent("recordings.corrupt.json").path))
+        XCTAssertNotNil(store.lastErrorMessage)
+    }
+
+    func testUnreadCountTracksNewRecordingsUntilMarkedRead() throws {
+        let tempDirectory = try makeTempDirectory()
+        defer { try? FileManager.default.removeItem(at: tempDirectory) }
+        let suiteName = "RecordingStoreUnreadTest_\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let store = RecordingStore(directoryURL: tempDirectory, userDefaults: defaults)
+        XCTAssertEqual(store.unreadCount, 0)
+
+        let now = Date()
+        let item1 = RecordingItem(fileName: "1.m4a", createdAt: now, duration: 2.0, peakDecibels: -20.0)
+        store.add(item1)
+        XCTAssertEqual(store.unreadCount, 1)
+
+        store.markAllAsRead(at: now.addingTimeInterval(1))
+        XCTAssertEqual(store.unreadCount, 0)
+
+        let item2 = RecordingItem(fileName: "2.m4a", createdAt: now.addingTimeInterval(5), duration: 2.0, peakDecibels: -20.0)
+        store.add(item2)
+        XCTAssertEqual(store.unreadCount, 1)
+    }
 }

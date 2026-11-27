@@ -52,6 +52,14 @@ struct VoiceActivityDetector: Sendable {
                 peakDecibels = decibels
             }
 
+            // 1クリップの最大録音長に達した場合は、エアコンやいびきによる巨大ファイル化を防ぐため区切って保存する
+            if recordingDuration >= settings.maxClipDurationSeconds {
+                let effectiveSpeechDuration = recordingDuration - silenceDuration
+                let shouldSave = effectiveSpeechDuration >= settings.minimumDurationSeconds
+                reset()
+                return .finishRecording(shouldSave: shouldSave)
+            }
+
             if isAboveThreshold {
                 silenceDuration = 0
                 return .continueRecording

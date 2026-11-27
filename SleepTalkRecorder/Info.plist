@@ -31,7 +31,7 @@
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>Speech recognition is used to transcribe recorded sleep talk and name the audio files.</string>
 	<key>NSUserTrackingUsageDescription</key>
-	<string>This identifier will be used to deliver personalized ads to you.</string>
+	<string>Allowing tracking helps show ads more relevant to you and supports keeping this app free to use.</string>
 	<key>SKAdNetworkItems</key>
 	<array>
 		<dict>
@@ -42,7 +42,7 @@
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
-		<true/>
+		<false/>
 	</dict>
 	<key>UIBackgroundModes</key>
 	<array>

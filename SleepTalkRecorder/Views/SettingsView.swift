@@ -1,9 +1,10 @@
 import SwiftUI
 
-/// 自動録音パラメータや夜間表示の設定を行う画面
+/// 自動録音パラメータや夜間表示・音声認識・通知の設定を行う画面
 struct SettingsView: View {
     @Bindable var recorder: SleepAudioRecorder
     @State private var reminderPermissionDenied = false
+    @State private var showAdvancedDetection = false
 
     private var reminderTimeBinding: Binding<Date> {
         Binding(
@@ -52,54 +53,71 @@ struct SettingsView: View {
                         )
                     }
 
-                    VStack(alignment: .leading, spacing: 6) {
-                        HStack {
-                            Text("Silence Timeout")
-                            Spacer()
-                            Text("\(recorder.settings.silenceTimeoutSeconds, specifier: "%.1f") s")
-                                .foregroundStyle(.secondary)
-                                .monospacedDigit()
+                    DisclosureGroup("Advanced Detection Settings", isExpanded: $showAdvancedDetection) {
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack {
+                                Text("Silence Timeout")
+                                Spacer()
+                                Text("\(recorder.settings.silenceTimeoutSeconds, specifier: "%.1f") s")
+                                    .foregroundStyle(.secondary)
+                                    .monospacedDigit()
+                            }
+                            Slider(
+                                value: $recorder.settings.silenceTimeoutSeconds,
+                                in: 1.0...10.0,
+                                step: 0.5
+                            )
                         }
-                        Slider(
-                            value: $recorder.settings.silenceTimeoutSeconds,
-                            in: 1.0...10.0,
-                            step: 0.5
-                        )
-                    }
 
-                    VStack(alignment: .leading, spacing: 6) {
-                        HStack {
-                            Text("Minimum Recording Duration")
-                            Spacer()
-                            Text("\(recorder.settings.minimumDurationSeconds, specifier: "%.1f") s")
-                                .foregroundStyle(.secondary)
-                                .monospacedDigit()
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack {
+                                Text("Minimum Recording Duration")
+                                Spacer()
+                                Text("\(recorder.settings.minimumDurationSeconds, specifier: "%.1f") s")
+                                    .foregroundStyle(.secondary)
+                                    .monospacedDigit()
+                            }
+                            Slider(
+                                value: $recorder.settings.minimumDurationSeconds,
+                                in: 0.2...3.0,
+                                step: 0.2
+                            )
                         }
-                        Slider(
-                            value: $recorder.settings.minimumDurationSeconds,
-                            in: 0.2...3.0,
-                            step: 0.2
-                        )
-                    }
 
-                    VStack(alignment: .leading, spacing: 6) {
-                        HStack {
-                            Text("Pre-roll Buffer")
-                            Spacer()
-                            Text("\(recorder.settings.preRollSeconds, specifier: "%.1f") s")
-                                .foregroundStyle(.secondary)
-                                .monospacedDigit()
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack {
+                                Text("Pre-roll Buffer")
+                                Spacer()
+                                Text("\(recorder.settings.preRollSeconds, specifier: "%.1f") s")
+                                    .foregroundStyle(.secondary)
+                                    .monospacedDigit()
+                            }
+                            Slider(
+                                value: $recorder.settings.preRollSeconds,
+                                in: 0.0...3.0,
+                                step: 0.5
+                            )
                         }
-                        Slider(
-                            value: $recorder.settings.preRollSeconds,
-                            in: 0.0...3.0,
-                            step: 0.5
-                        )
+
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack {
+                                Text("Max Clip Length")
+                                Spacer()
+                                Text("\(Int(recorder.settings.maxClipDurationSeconds)) s")
+                                    .foregroundStyle(.secondary)
+                                    .monospacedDigit()
+                            }
+                            Slider(
+                                value: $recorder.settings.maxClipDurationSeconds,
+                                in: 15.0...180.0,
+                                step: 15.0
+                            )
+                        }
                     }
                 } header: {
                     Text("Voice Detection Settings")
                 } footer: {
-                    Text("Pre-roll buffering captures audio just before speech triggers so the beginning of sleep talk is not cut off.")
+                    Text("Pre-roll buffering captures audio just before speech triggers, and max clip length prevents huge files from steady fan or AC noise.")
                 }
 
                 Section {
@@ -124,9 +142,16 @@ struct SettingsView: View {
                     Text("Use a start delay to skip pre-sleep noise, and auto-stop so recording ends automatically in the morning.")
                 }
 
-                Section("Display & Naming Settings") {
+                Section {
                     Toggle("Dim Screen on Start (Night Mode)", isOn: $recorder.settings.dimScreenDuringMonitoring)
                     Toggle("Transcribe Sleep Talk for File Name", isOn: $recorder.settings.transcribeForFileName)
+                    if recorder.settings.transcribeForFileName {
+                        Toggle("Allow Apple Server Recognition", isOn: $recorder.settings.allowServerSpeechRecognition)
+                    }
+                } header: {
+                    Text("Display & Naming Settings")
+                } footer: {
+                    Text("On-device speech recognition is prioritized by default. Enabling server recognition allows audio to be processed by Apple's servers when on-device recognition is unavailable.")
                 }
 
                 Section {
@@ -177,7 +202,21 @@ struct SettingsView: View {
                 }
 
                 Section("Support & Feedback") {
-                    if let goodsURL = AmazonSleepGoodsService.searchURL(for: AmazonSleepGoodsService.recommendations(for: nil)[0]) {
+                    NavigationLink {
+                        FeedbackFormView()
+                    } label: {
+                        Label("Send Feedback or Bug Report", systemImage: "bubble.left.and.exclamationmark.bubble.right.fill")
+                    }
+
+                    if let privacyURL = URL(string: "https://naritamasayuki.github.io/SleepTalkRecorder/privacy.html") {
+                        Link(destination: privacyURL) {
+                            Label("Privacy Policy", systemImage: "hand.raised.fill")
+                        }
+                    }
+                }
+
+                if let goodsURL = AmazonSleepGoodsService.searchURL(for: AmazonSleepGoodsService.recommendations(for: nil)[0]) {
+                    Section("Sleep Goods (PR)") {
                         Link(destination: goodsURL) {
                             HStack {
                                 Label("Browse Sleep Goods on Amazon", systemImage: "bag.fill")
@@ -189,18 +228,6 @@ struct SettingsView: View {
                                     .background(Color.orange.opacity(0.25), in: RoundedRectangle(cornerRadius: 4))
                                     .foregroundStyle(.orange)
                             }
-                        }
-                    }
-
-                    NavigationLink {
-                        FeedbackFormView()
-                    } label: {
-                        Label("Send Feedback or Bug Report", systemImage: "bubble.left.and.exclamationmark.bubble.right.fill")
-                    }
-
-                    if let privacyURL = URL(string: "https://naritamasayuki.github.io/SleepTalkRecorder/privacy.html") {
-                        Link(destination: privacyURL) {
-                            Label("Privacy Policy", systemImage: "hand.raised.fill")
                         }
                     }
                 }

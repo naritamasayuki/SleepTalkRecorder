@@ -37,11 +37,11 @@
   ■ 深層心理の要求＆時間帯分析
   寝言のキーワードと声の大きさ・時間帯から、「休息・回復の要求」「緊張からの解放要求」「承認・つながりの要求」など、無意識の心理サインをグラフとレポートで可視化します。
 
-  ■ プライバシー重視の端末内保存
-  録音データはすべてお使いのiPhone内にのみ保存されます。
+  ■ 端末内保存＆オンデバイス音声認識優先
+  録音データはすべてお使いのiPhone内に保存され、文字起こしもオンデバイス音声認識を既定で優先します（設定でAppleサーバー認識を許可することも可能です）。
 
   ※ 一晩中マイクを待機させるため、充電ケーブルに接続してのご利用をおすすめします。
-  ※ 深層心理分析は睡眠中の発話傾向をもとにしたセルフケア向けの参考情報であり、医療診断ではありません。
+  ※ 分析レポートはエンタメ・セルフリフレクション目的の参考情報であり、医学的根拠・医療診断ではありません。
   ```
 - **キーワード（100文字以内）**:
   `寝言,録音,睡眠,いびき,ボイスレコーダー,文字起こし,深層心理,睡眠分析,バックグラウンド録音,寝室`
@@ -70,10 +70,10 @@
     Recorded clips are transcribed using iOS Speech Recognition and automatically named after what you said.
   • Subconscious Needs & Time Analysis
     Explore hourly charts, volume trends, frequent words, and estimated subconscious needs (such as Rest & Recovery or Stress Relief) based on your sleep talk patterns.
-  • Private & On-Device
-    All recordings and history stay locally on your device.
+  • Local Storage & On-Device Speech Recognition by Default
+    Recorded audio stays locally on your device, and on-device speech recognition is prioritized by default (optional server recognition can be enabled in Settings).
 
-  Note: Plugging in your charger is recommended for overnight monitoring. Psychological insights are for self-reflection and wellness only, not medical diagnosis.
+  Note: Plugging in your charger is recommended for overnight monitoring. Analysis insights are for entertainment and self-reflection only, not medical diagnosis.
   ```
 - **Keywords (max 100 chars)**:
   `sleep talk,recorder,sleep,snore,voice recorder,transcription,subconscious,dream,night,audio`

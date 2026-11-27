@@ -12,6 +12,7 @@ final class SleepTalkAnalyzerTests: XCTestCase {
         XCTAssertNil(result.peakHour)
         XCTAssertEqual(result.hourlyBuckets.count, 24)
         XCTAssertTrue(result.topKeywords.isEmpty)
+        XCTAssertFalse(result.hasEnoughDataForPsychology)
         XCTAssertTrue(result.insights.isEmpty)
     }
 
@@ -24,8 +25,8 @@ final class SleepTalkAnalyzerTests: XCTestCase {
 
         let items = [
             RecordingItem(fileName: "a.m4a", createdAt: date2AM, duration: 2.0, peakDecibels: -35.0, transcript: "明日も仕事だ"),
-            RecordingItem(fileName: "b.m4a", createdAt: date2AM, duration: 4.0, peakDecibels: -20.0, transcript: "明日は休み"),
-            RecordingItem(fileName: "c.m4a", createdAt: date3AM, duration: 3.0, peakDecibels: -10.0, transcript: nil)
+            RecordingItem(fileName: "b.m4a", createdAt: date2AM, duration: 4.0, peakDecibels: -20.0, transcript: "明日は確認しなきゃ"),
+            RecordingItem(fileName: "c.m4a", createdAt: date3AM, duration: 3.0, peakDecibels: -10.0, transcript: "時間がない")
         ]
 
         let result = SleepTalkAnalyzer.analyze(items, calendar: calendar)
@@ -34,7 +35,7 @@ final class SleepTalkAnalyzerTests: XCTestCase {
         XCTAssertEqual(result.totalDuration, 9.0, accuracy: 0.001)
         XCTAssertEqual(result.averageDuration, 3.0, accuracy: 0.001)
         XCTAssertEqual(result.maxPeakDecibels ?? -999, -10.0, accuracy: 0.001)
-        XCTAssertEqual(result.transcribedCount, 2)
+        XCTAssertEqual(result.transcribedCount, 3)
         XCTAssertEqual(result.peakHour, 2)
         XCTAssertEqual(result.hourlyBuckets[2].count, 2)
         XCTAssertEqual(result.hourlyBuckets[3].count, 1)
@@ -45,17 +46,19 @@ final class SleepTalkAnalyzerTests: XCTestCase {
 
         XCTAssertEqual(result.topKeywords.first?.word, "明日")
         XCTAssertEqual(result.topKeywords.first?.count, 2)
-        XCTAssertFalse(result.insights.isEmpty)
+        XCTAssertTrue(result.hasEnoughDataForPsychology)
         XCTAssertEqual(result.primaryNeed?.type, .relief)
     }
 
     func testPsychologicalNeedDetectsRestRequest() {
         let items = [
             RecordingItem(fileName: "1.m4a", duration: 2.0, peakDecibels: -35.0, transcript: "もう眠い、疲れた、休みたい"),
-            RecordingItem(fileName: "2.m4a", duration: 1.5, peakDecibels: -32.0, transcript: "帰りたいたいへんだ")
+            RecordingItem(fileName: "2.m4a", duration: 1.5, peakDecibels: -32.0, transcript: "帰りたいしんどい"),
+            RecordingItem(fileName: "3.m4a", duration: 1.5, peakDecibels: -30.0, transcript: "だるいなあ")
         ]
 
         let result = SleepTalkAnalyzer.analyze(items)
+        XCTAssertTrue(result.hasEnoughDataForPsychology)
         XCTAssertEqual(result.primaryNeed?.type, .rest)
         XCTAssertTrue(result.primaryNeed?.matchedKeywords.contains("眠い") == true)
     }
@@ -63,25 +66,56 @@ final class SleepTalkAnalyzerTests: XCTestCase {
     func testPsychologicalNeedDetectsEnglishKeywords() {
         let items = [
             RecordingItem(fileName: "en1.m4a", duration: 2.5, peakDecibels: -14.0, transcript: "work tomorrow deadline"),
-            RecordingItem(fileName: "en2.m4a", duration: 2.0, peakDecibels: -18.0, transcript: "late for work")
+            RecordingItem(fileName: "en2.m4a", duration: 2.0, peakDecibels: -18.0, transcript: "late for work"),
+            RecordingItem(fileName: "en3.m4a", duration: 2.0, peakDecibels: -20.0, transcript: "check the office schedule")
         ]
 
         let result = SleepTalkAnalyzer.analyze(items)
+        XCTAssertTrue(result.hasEnoughDataForPsychology)
         XCTAssertEqual(result.primaryNeed?.type, .relief)
         XCTAssertTrue(result.primaryNeed?.matchedKeywords.contains("work") == true)
     }
 
-    func testPsychologicalNeedDetectsEnglishRestKeywords() {
+    func testUntranscribedClipsAreExcludedFromPsychology() {
         let items = [
-            RecordingItem(fileName: "1.m4a", duration: 2.0, peakDecibels: -35.0, transcript: "I am so sleepy and tired"),
-            RecordingItem(fileName: "2.m4a", duration: 1.5, peakDecibels: -32.0, transcript: "Need rest and break")
+            RecordingItem(fileName: "1.m4a", duration: 4.0, peakDecibels: -10.0, transcript: nil),
+            RecordingItem(fileName: "2.m4a", duration: 3.0, peakDecibels: -12.0, transcript: ""),
+            RecordingItem(fileName: "3.m4a", duration: 2.0, peakDecibels: -35.0, transcript: "   ")
         ]
 
         let result = SleepTalkAnalyzer.analyze(items)
-        XCTAssertEqual(result.primaryNeed?.type, .rest)
-        XCTAssertTrue(result.primaryNeed?.matchedKeywords.contains("sleepy") == true)
-        XCTAssertFalse(result.topKeywords.isEmpty)
-        XCTAssertFalse(result.insights.isEmpty)
+        XCTAssertFalse(result.hasEnoughDataForPsychology)
+        XCTAssertNil(result.primaryNeed)
+        XCTAssertTrue(result.psychologicalNeeds.isEmpty)
+    }
+
+    func testInsufficientTranscribedClipsSuppressesPrimaryNeed() {
+        let items = [
+            RecordingItem(fileName: "1.m4a", duration: 2.0, peakDecibels: -35.0, transcript: "I am sleepy"),
+            RecordingItem(fileName: "2.m4a", duration: 2.0, peakDecibels: -35.0, transcript: "so tired")
+        ]
+
+        let result = SleepTalkAnalyzer.analyze(items)
+        XCTAssertEqual(result.transcribedCount, 2)
+        XCTAssertFalse(result.hasEnoughDataForPsychology)
+        XCTAssertNil(result.primaryNeed)
+    }
+
+    func testEnglishWordBoundaryPreventsSubstringFalsePositives() {
+        let items = [
+            RecordingItem(fileName: "1.m4a", duration: 2.0, peakDecibels: -25.0, transcript: "good morning long ago"),
+            RecordingItem(fileName: "2.m4a", duration: 2.0, peakDecibels: -25.0, transcript: "walking around the park"),
+            RecordingItem(fileName: "3.m4a", duration: 2.0, peakDecibels: -25.0, transcript: "sometimes it rains")
+        ]
+
+        let scores = SleepTalkAnalyzer.analyzePsychologicalNeeds(items: items)
+        // "go" (good/ago), "run" (around), "time" (sometimes) に誤爆しないこと
+        let freedomMatched = scores.first(where: { $0.type == .freedom })?.matchedKeywords ?? []
+        let safetyMatched = scores.first(where: { $0.type == .safety })?.matchedKeywords ?? []
+        let reliefMatched = scores.first(where: { $0.type == .relief })?.matchedKeywords ?? []
+        XCTAssertFalse(freedomMatched.contains("go"))
+        XCTAssertFalse(safetyMatched.contains("run"))
+        XCTAssertFalse(reliefMatched.contains("time"))
     }
 
     func testRecordingItemFormattedDateAdaptsToLocale() throws {

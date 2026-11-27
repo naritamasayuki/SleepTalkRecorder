@@ -76,13 +76,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "This identifier will be used to deliver personalized ads to you."
+            "value" : "Allowing tracking helps show ads more relevant to you and supports keeping this app free to use."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "お客様に関連性の高い広告を表示するためにトラッキングを許可してください。"
+            "value" : "許可すると、お客様と関連性の高い広告が表示され、本アプリを無料で提供し続けるための支えになります。"
           }
         }
       }

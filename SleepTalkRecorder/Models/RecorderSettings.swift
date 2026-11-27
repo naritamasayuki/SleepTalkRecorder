@@ -14,6 +14,10 @@ struct RecorderSettings: Equatable, Codable, Sendable {
     var dimScreenDuringMonitoring: Bool
     /// 録音後に寝言を文字起こしして音声ファイル名に設定するかどうか
     var transcribeForFileName: Bool
+    /// オンデバイス認識が利用できない場合にAppleのサーバー認識を許可するかどうか（既定はOFF）
+    var allowServerSpeechRecognition: Bool
+    /// 1クリップの最大録音時間（秒）。エアコンやいびきによる巨大ファイル化を防ぐ
+    var maxClipDurationSeconds: TimeInterval
     /// 毎日の就寝リマインダー通知を有効にするかどうか
     var bedtimeReminderEnabled: Bool
     /// 就寝リマインダー通知の時（0〜23）
@@ -32,6 +36,8 @@ struct RecorderSettings: Equatable, Codable, Sendable {
         preRollSeconds: 1.5,
         dimScreenDuringMonitoring: true,
         transcribeForFileName: true,
+        allowServerSpeechRecognition: false,
+        maxClipDurationSeconds: 60.0,
         bedtimeReminderEnabled: false,
         bedtimeReminderHour: 23,
         bedtimeReminderMinute: 0,
@@ -46,6 +52,8 @@ struct RecorderSettings: Equatable, Codable, Sendable {
         preRollSeconds: TimeInterval,
         dimScreenDuringMonitoring: Bool,
         transcribeForFileName: Bool = true,
+        allowServerSpeechRecognition: Bool = false,
+        maxClipDurationSeconds: TimeInterval = 60.0,
         bedtimeReminderEnabled: Bool = false,
         bedtimeReminderHour: Int = 23,
         bedtimeReminderMinute: Int = 0,
@@ -58,6 +66,8 @@ struct RecorderSettings: Equatable, Codable, Sendable {
         self.preRollSeconds = preRollSeconds
         self.dimScreenDuringMonitoring = dimScreenDuringMonitoring
         self.transcribeForFileName = transcribeForFileName
+        self.allowServerSpeechRecognition = allowServerSpeechRecognition
+        self.maxClipDurationSeconds = maxClipDurationSeconds
         self.bedtimeReminderEnabled = bedtimeReminderEnabled
         self.bedtimeReminderHour = bedtimeReminderHour
         self.bedtimeReminderMinute = bedtimeReminderMinute
@@ -74,6 +84,8 @@ struct RecorderSettings: Equatable, Codable, Sendable {
         preRollSeconds = try container.decodeIfPresent(TimeInterval.self, forKey: .preRollSeconds) ?? defaults.preRollSeconds
         dimScreenDuringMonitoring = try container.decodeIfPresent(Bool.self, forKey: .dimScreenDuringMonitoring) ?? defaults.dimScreenDuringMonitoring
         transcribeForFileName = try container.decodeIfPresent(Bool.self, forKey: .transcribeForFileName) ?? defaults.transcribeForFileName
+        allowServerSpeechRecognition = try container.decodeIfPresent(Bool.self, forKey: .allowServerSpeechRecognition) ?? defaults.allowServerSpeechRecognition
+        maxClipDurationSeconds = try container.decodeIfPresent(TimeInterval.self, forKey: .maxClipDurationSeconds) ?? defaults.maxClipDurationSeconds
         bedtimeReminderEnabled = try container.decodeIfPresent(Bool.self, forKey: .bedtimeReminderEnabled) ?? defaults.bedtimeReminderEnabled
         bedtimeReminderHour = try container.decodeIfPresent(Int.self, forKey: .bedtimeReminderHour) ?? defaults.bedtimeReminderHour
         bedtimeReminderMinute = try container.decodeIfPresent(Int.self, forKey: .bedtimeReminderMinute) ?? defaults.bedtimeReminderMinute
@@ -108,6 +120,8 @@ struct RecorderSettings: Equatable, Codable, Sendable {
             preRollSeconds: min(max(preRollSeconds, 0.0), 3.0),
             dimScreenDuringMonitoring: dimScreenDuringMonitoring,
             transcribeForFileName: transcribeForFileName,
+            allowServerSpeechRecognition: allowServerSpeechRecognition,
+            maxClipDurationSeconds: min(max(maxClipDurationSeconds, 15.0), 180.0),
             bedtimeReminderEnabled: bedtimeReminderEnabled,
             bedtimeReminderHour: min(max(bedtimeReminderHour, 0), 23),
             bedtimeReminderMinute: min(max(bedtimeReminderMinute, 0), 59),

@@ -1,18 +1,26 @@
 import SwiftUI
 import UIKit
 
-/// SNSシェア用の「深層心理診断カード」を描画・画像化するビュー
+/// SNSシェア用の「寝言傾向レポートカード」を描画・画像化するビュー
 struct AnalysisShareCardView: View {
+    static let appStoreURL = URL(string: "https://apps.apple.com/app/id6837623075")!
+
     let analysis: SleepTalkAnalysis
+    let includeKeywords: Bool
+
+    init(analysis: SleepTalkAnalysis, includeKeywords: Bool = false) {
+        self.analysis = analysis
+        self.includeKeywords = includeKeywords
+    }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
+        VStack(alignment: .leading, spacing: 16) {
             HStack {
                 Image(systemName: "moon.stars.fill")
                     .foregroundStyle(.yellow)
-                Text("SleepTalk Psychology Report")
+                Text("SleepTalk Report")
                     .font(.caption.bold())
-                    .foregroundStyle(.white.opacity(0.85))
+                    .foregroundStyle(.white.opacity(0.9))
                 Spacer()
                 Text("\(analysis.totalCount) clips")
                     .font(.caption.monospacedDigit())
@@ -21,7 +29,7 @@ struct AnalysisShareCardView: View {
 
             if let primary = analysis.primaryNeed {
                 VStack(alignment: .leading, spacing: 10) {
-                    Text("Subconscious Need (Estimated)")
+                    Text("Sleep Talk Tendency (Reference)")
                         .font(.caption2)
                         .foregroundStyle(.white.opacity(0.65))
 
@@ -55,7 +63,7 @@ struct AnalysisShareCardView: View {
                 .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 14))
             }
 
-            if !analysis.topKeywords.isEmpty {
+            if includeKeywords && !analysis.topKeywords.isEmpty {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Frequent Words (Transcribed)")
                         .font(.caption.bold())
@@ -74,18 +82,36 @@ struct AnalysisShareCardView: View {
                 }
             }
 
-            HStack {
-                if let peak = analysis.peakHour {
-                    Label("Peak: \(peak):00", systemImage: "clock.fill")
-                        .font(.caption2)
-                        .foregroundStyle(.white.opacity(0.7))
+            // 免責表記（エンタメ・セルフリフレクション目的であることを明記）
+            Text("For entertainment & self-reflection only. Not a medical diagnosis.")
+                .font(.system(size: 10))
+                .foregroundStyle(.white.opacity(0.55))
+                .fixedSize(horizontal: false, vertical: true)
+
+            Divider()
+                .overlay(Color.white.opacity(0.15))
+
+            HStack(alignment: .bottom) {
+                VStack(alignment: .leading, spacing: 2) {
+                    if let peak = analysis.peakHour {
+                        Label("Peak: \(peak):00", systemImage: "clock.fill")
+                            .font(.caption2)
+                            .foregroundStyle(.white.opacity(0.75))
+                    }
+                    Text("#SleepTalkReport")
+                        .font(.caption2.bold())
+                        .foregroundStyle(.cyan.opacity(0.85))
                 }
                 Spacer()
-                Text("SleepTalk")
-                    .font(.caption.bold())
-                    .foregroundStyle(.indigo.opacity(0.9))
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text("SleepTalk - Auto Recorder")
+                        .font(.caption2.bold())
+                        .foregroundStyle(.white.opacity(0.9))
+                    Text("Available on App Store")
+                        .font(.system(size: 9))
+                        .foregroundStyle(.white.opacity(0.6))
+                }
             }
-            .padding(.top, 4)
         }
         .padding(22)
         .frame(width: 360)
@@ -109,8 +135,10 @@ struct AnalysisShareCardView: View {
 
     /// 診断カードを SNS 共有用の UIImage にレンダリングする
     @MainActor
-    static func renderImage(for analysis: SleepTalkAnalysis) -> UIImage? {
-        let renderer = ImageRenderer(content: AnalysisShareCardView(analysis: analysis))
+    static func renderImage(for analysis: SleepTalkAnalysis, includeKeywords: Bool = false) -> UIImage? {
+        let renderer = ImageRenderer(
+            content: AnalysisShareCardView(analysis: analysis, includeKeywords: includeKeywords)
+        )
         renderer.scale = 3.0
         return renderer.uiImage
     }

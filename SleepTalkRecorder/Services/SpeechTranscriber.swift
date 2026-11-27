@@ -37,7 +37,15 @@ enum SpeechTranscriber {
     }
 
     /// 音声ファイルを端末の言語設定に合わせて文字起こしし、認識されたテキストを返す（認識不可・エラー時は nil）
-    static func transcribe(fileURL: URL, locale: Locale = .autoupdatingCurrent) async -> String? {
+    /// - Parameters:
+    ///   - fileURL: 文字起こし対象の音声ファイルURL
+    ///   - locale: 音声認識ロケール
+    ///   - allowServerRecognition: オンデバイス認識が利用できない場合にAppleサーバー認識を許可するか（既定: false）
+    static func transcribe(
+        fileURL: URL,
+        locale: Locale = .autoupdatingCurrent,
+        allowServerRecognition: Bool = false
+    ) async -> String? {
         guard SFSpeechRecognizer.authorizationStatus() == .authorized else {
             return nil
         }
@@ -53,8 +61,16 @@ enum SpeechTranscriber {
 
         let request = SFSpeechURLRecognitionRequest(url: fileURL)
         request.shouldReportPartialResults = false
-        // オンデバイス認識に限定せず、利用可能な最高精度の認識エンジンにフォールバックさせる
-        request.requiresOnDeviceRecognition = false
+
+        if recognizer.supportsOnDeviceRecognition {
+            // オンデバイス認識に対応している場合は、明示的にサーバー認識を許可していない限り端末内で完結させる
+            request.requiresOnDeviceRecognition = !allowServerRecognition
+        } else if allowServerRecognition {
+            request.requiresOnDeviceRecognition = false
+        } else {
+            logger.info("オンデバイス音声認識が利用できず、サーバー認識も無効のため文字起こしをスキップします")
+            return nil
+        }
 
         return await withCheckedContinuation { continuation in
             let box = RecognitionContinuationBox(continuation: continuation)

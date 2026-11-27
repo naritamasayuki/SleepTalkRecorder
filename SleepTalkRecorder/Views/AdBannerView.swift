@@ -1,9 +1,68 @@
+import AppTrackingTransparency
 import GoogleMobileAds
 import OSLog
+import Observation
 import SwiftUI
 import UIKit
+import UserMessagingPlatform
 
-/// 画面下段に表示する Google AdMob バナー広告ビュー
+/// UMP（欧州・英国向け同意管理）→ ATT → AdMob SDK 初期化の順序を制御するマネージャー
+@MainActor
+@Observable
+final class AdConsentManager {
+    private(set) var canRequestAds: Bool = false
+    private var hasRequestedConsent = false
+    private var hasStartedSDK = false
+    private let logger = Logger(subsystem: "com.sleeptalkrecorder.app", category: "AdConsentManager")
+
+    /// オンボーディング完了後に UMP 同意確認 → ATT → AdMob SDK 開始の順で実行する
+    func requestConsentAndStartAdsIfNeeded() async {
+        guard !hasRequestedConsent else { return }
+        hasRequestedConsent = true
+
+        // 1. UMP 同意情報の更新（EEA/UK では同意フォームを提示）
+        let parameters = RequestParameters()
+        do {
+            try await ConsentInformation.shared.requestConsentInfoUpdate(with: parameters)
+            if let rootVC = Self.activeRootViewController() {
+                try await ConsentForm.loadAndPresentIfRequired(from: rootVC)
+            }
+        } catch {
+            logger.warning("UMP同意フォームの処理でエラーが発生しました: \(error.localizedDescription, privacy: .public)")
+        }
+
+        // 2. UMP 同意確認後に ATT ダイアログを表示（未回答の場合のみ）
+        if ATTrackingManager.trackingAuthorizationStatus == .notDetermined {
+            _ = await ATTrackingManager.requestTrackingAuthorization()
+        }
+
+        // 3. 同意状態が広告リクエスト可能であれば AdMob SDK を初期化する
+        let allowed = ConsentInformation.shared.canRequestAds
+        canRequestAds = allowed
+        if allowed {
+            await startMobileAdsIfNeeded()
+        } else {
+            logger.info("同意状態により広告リクエストを保留しています")
+        }
+    }
+
+    private func startMobileAdsIfNeeded() async {
+        guard !hasStartedSDK else { return }
+        hasStartedSDK = true
+        await MobileAds.shared.start()
+        logger.info("Google Mobile Ads SDK の初期化が完了しました")
+    }
+
+    static func activeRootViewController() -> UIViewController? {
+        UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .flatMap(\.windows)
+            .first(where: \.isKeyWindow)?
+            .rootViewController
+    }
+}
+
+/// 画面下段に表示する Google AdMob バナー広告ビュー（同意完了後のみ読み込む）
 struct AdBannerView: View {
     /// 標準バナー広告の高さ（320x50）
     static let bannerHeight: CGFloat = 50
@@ -18,21 +77,29 @@ struct AdBannerView: View {
     }
 
     let adUnitID: String
+    let canRequestAds: Bool
 
-    init(adUnitID: String = AdBannerView.defaultAdUnitID) {
+    init(adUnitID: String = AdBannerView.defaultAdUnitID, canRequestAds: Bool = true) {
         self.adUnitID = adUnitID
+        self.canRequestAds = canRequestAds
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            Divider()
-                .overlay(Color.white.opacity(0.12))
+        if canRequestAds {
+            VStack(spacing: 0) {
+                // タブバーとの誤タップ防止のため余白と区切りを設ける
+                Spacer()
+                    .frame(height: 8)
+                Divider()
+                    .overlay(Color.white.opacity(0.14))
 
-            AdMobBannerRepresentable(adUnitID: adUnitID)
-                .frame(maxWidth: .infinity)
-                .frame(height: Self.bannerHeight)
-                .background(Color(white: 0.06))
-                .accessibilityLabel(Text("Advertisement Area"))
+                AdMobBannerRepresentable(adUnitID: adUnitID)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: Self.bannerHeight)
+                    .background(Color(white: 0.06))
+                    .accessibilityLabel(Text("Advertisement Area"))
+            }
+            .background(Color.black)
         }
     }
 }
@@ -49,23 +116,15 @@ private struct AdMobBannerRepresentable: UIViewRepresentable {
         let bannerView = BannerView(adSize: AdSizeBanner)
         bannerView.adUnitID = adUnitID
         bannerView.delegate = context.coordinator
-        bannerView.rootViewController = Self.activeRootViewController()
+        bannerView.rootViewController = AdConsentManager.activeRootViewController()
         bannerView.load(Request())
         return bannerView
     }
 
     func updateUIView(_ uiView: BannerView, context: Context) {
         if uiView.rootViewController == nil {
-            uiView.rootViewController = Self.activeRootViewController()
+            uiView.rootViewController = AdConsentManager.activeRootViewController()
         }
-    }
-
-    private static func activeRootViewController() -> UIViewController? {
-        UIApplication.shared.connectedScenes
-            .compactMap { $0 as? UIWindowScene }
-            .flatMap(\.windows)
-            .first(where: \.isKeyWindow)?
-            .rootViewController
     }
 
     final class Coordinator: NSObject, BannerViewDelegate {

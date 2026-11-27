@@ -82,4 +82,24 @@ final class VoiceActivityDetectorTests: XCTestCase {
         XCTAssertEqual(VoiceActivityDetector.calculateDecibels(samples: [1.0, -1.0, 1.0]), 0.0, accuracy: 0.001)
         XCTAssertEqual(VoiceActivityDetector.calculateDecibels(samples: [0.1, -0.1, 0.1]), -20.0, accuracy: 0.01)
     }
+
+    func testStopsRecordingAtMaxClipDuration() {
+        let settings = RecorderSettings(
+            thresholdDecibels: -35.0,
+            silenceTimeoutSeconds: 3.0,
+            minimumDurationSeconds: 0.5,
+            preRollSeconds: 1.0,
+            dimScreenDuringMonitoring: true,
+            maxClipDurationSeconds: 20.0
+        )
+        var detector = VoiceActivityDetector(settings: settings)
+
+        // エアコン等の定常ノイズが連続しても最大長（20秒）で安全に区切られること
+        XCTAssertEqual(detector.process(decibels: -20.0, bufferDuration: 1.0), .startRecording)
+        for _ in 0..<18 {
+            XCTAssertEqual(detector.process(decibels: -20.0, bufferDuration: 1.0), .continueRecording)
+        }
+        XCTAssertEqual(detector.process(decibels: -20.0, bufferDuration: 1.0), .finishRecording(shouldSave: true))
+        XCTAssertEqual(detector.state, .monitoring)
+    }
 }

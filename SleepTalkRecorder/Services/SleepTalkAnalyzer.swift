@@ -44,17 +44,17 @@ enum PsychologicalNeedType: String, CaseIterable, Identifiable, Sendable {
     var summaryDescription: String {
         switch self {
         case .rest:
-            return String(localized: "Your mind and body strongly crave sufficient sleep and relaxation. Fatigue may be accumulating.")
+            return String(localized: "Words related to rest and sleep appeared frequently. Taking a moment to unwind may feel refreshing.")
         case .relief:
-            return String(localized: "This reflects an unconscious desire to release daytime responsibilities and pressure.")
+            return String(localized: "Words about tasks or schedules appeared often. Your mind may still be sorting through daily routines.")
         case .connection:
-            return String(localized: "There may be an underlying wish to be understood, supported, and connected with others.")
+            return String(localized: "Words about people or feelings appeared often, suggesting social moments stayed on your mind.")
         case .safety:
-            return String(localized: "Mild anxiety or stress may be present, leading you to seek a calm and reassuring environment.")
+            return String(localized: "Words linked to tension or alertness appeared in your clips. A calm bedtime routine may help you relax.")
         case .freedom:
-            return String(localized: "Your desire for fun, fresh stimulation, and stepping away from daily routines is rising.")
+            return String(localized: "Words about curiosity, fun, or wanting to go somewhere appeared often in your nighttime speech.")
         case .clarity:
-            return String(localized: "Your brain is calmly organizing and consolidating daytime memories and thoughts during sleep.")
+            return String(localized: "Your recorded words reflect everyday thoughts being gently organized while you sleep.")
         }
     }
 
@@ -119,11 +119,14 @@ struct SleepTalkAnalysis: Equatable, Sendable {
     let volumeBreakdown: VolumeBreakdown
     let psychologicalNeeds: [PsychologicalNeedScore]
     let primaryNeed: PsychologicalNeedScore?
+    let hasEnoughDataForPsychology: Bool
     let insights: [String]
 }
 
-/// 録音された寝言データから深層心理の要求・傾向・時間帯分布を分析するサービス
+/// 録音された寝言データから傾向・時間帯分布・頻出ワードを分析するサービス（エンタメ・セルフリフレクション向け）
 enum SleepTalkAnalyzer {
+    /// 心理傾向の参考レポートを表示するための最小文字起こし件数
+    static let minimumTranscribedClipsForPsychology = 3
     private static let keywordDictionary: [PsychologicalNeedType: [String]] = [
         .rest: [
             "眠い", "寝", "疲れ", "休み", "休みたい", "しんどい", "だるい", "無理", "帰りたい", "もう", "重い",
@@ -162,6 +165,7 @@ enum SleepTalkAnalyzer {
                 volumeBreakdown: .init(quietCount: 0, normalCount: 0, loudCount: 0),
                 psychologicalNeeds: [],
                 primaryNeed: nil,
+                hasEnoughDataForPsychology: false,
                 insights: []
             )
         }
@@ -211,9 +215,10 @@ enum SleepTalkAnalyzer {
         // 頻出キーワード抽出
         let topKeywords = extractTopKeywords(from: transcribedItems, limit: 8)
 
-        // 深層心理の要求分析
+        // 傾向分析（文字起こしがあるクリップのみ対象。件数不足時は参考表示を抑止）
         let psychologicalNeeds = analyzePsychologicalNeeds(items: items, calendar: calendar)
-        let primaryNeed = psychologicalNeeds.first
+        let hasEnoughData = transcribedItems.count >= Self.minimumTranscribedClipsForPsychology && !psychologicalNeeds.isEmpty
+        let primaryNeed = hasEnoughData ? psychologicalNeeds.first : nil
 
         // インサイト文の生成
         let insights = buildInsights(
@@ -235,63 +240,61 @@ enum SleepTalkAnalyzer {
             hourlyBuckets: hourlyBuckets,
             topKeywords: topKeywords,
             volumeBreakdown: volumeBreakdown,
-            psychologicalNeeds: psychologicalNeeds,
+            psychologicalNeeds: hasEnoughData ? psychologicalNeeds : [],
             primaryNeed: primaryNeed,
+            hasEnoughDataForPsychology: hasEnoughData,
             insights: insights
         )
     }
 
-    /// 文字起こし内容と発話パターン（音量・長さ・時間帯）から深層心理の要求をスコアリングする
+    /// 文字起こしのあるクリップのみを対象に、キーワード一致と補助的な発話パターンから傾向をスコアリングする
     static func analyzePsychologicalNeeds(
         items: [RecordingItem],
         calendar: Calendar = .current
     ) -> [PsychologicalNeedScore] {
-        guard !items.isEmpty else { return [] }
+        // 文字起こしのないクリップ（物音・いびき等）は心理スコアの対象外にする
+        let transcribedItems = items.filter {
+            guard let text = $0.transcript?.trimmingCharacters(in: .whitespacesAndNewlines) else { return false }
+            return !text.isEmpty
+        }
+        guard !transcribedItems.isEmpty else { return [] }
 
         var scores: [PsychologicalNeedType: Double] = Dictionary(
             uniqueKeysWithValues: PsychologicalNeedType.allCases.map { ($0, 0.0) }
         )
         var matchedMap: [PsychologicalNeedType: Set<String>] = [:]
 
-        for item in items {
-            let hour = calendar.component(.hour, from: item.createdAt)
+        for item in transcribedItems {
+            guard let transcript = item.transcript else { continue }
+            let englishTokens = tokenizeLowercasedWords(in: transcript)
+            var matchedAnyKeyword = false
 
-            // 1. 音響特徴・時間帯によるベーススコア
-            if item.peakDecibels < -30.0 {
-                scores[.rest, default: 0] += 1.2
-                scores[.clarity, default: 0] += 0.8
-            } else if item.peakDecibels >= -15.0 {
-                scores[.relief, default: 0] += 1.2
-                scores[.safety, default: 0] += 1.0
-            } else {
-                scores[.connection, default: 0] += 1.0
-                scores[.clarity, default: 0] += 0.6
-            }
-
-            if item.duration >= 3.5 {
-                scores[.connection, default: 0] += 0.8
-            } else {
-                scores[.clarity, default: 0] += 0.5
-            }
-
-            if (2...4).contains(hour) {
-                scores[.rest, default: 0] += 0.6
-            } else if (5...7).contains(hour) {
-                scores[.relief, default: 0] += 0.7
-            }
-
-            // 2. 文字起こしキーワードによる重み付け（心理的意味が最も強い指標）
-            if let transcript = item.transcript, !transcript.isEmpty {
-                for (needType, keywords) in keywordDictionary {
-                    for keyword in keywords where transcript.localizedCaseInsensitiveContains(keyword) {
+            // 1. 文字起こしキーワードによるスコアリング（英語は単語境界での完全一致）
+            for (needType, keywords) in keywordDictionary {
+                for keyword in keywords {
+                    let isAsciiWord = keyword.unicodeScalars.allSatisfy { $0.isASCII && CharacterSet.letters.contains($0) }
+                    let matched: Bool
+                    if isAsciiWord {
+                        matched = englishTokens.contains(keyword.lowercased())
+                    } else {
+                        matched = transcript.localizedCaseInsensitiveContains(keyword)
+                    }
+                    if matched {
                         scores[needType, default: 0] += 3.0
                         matchedMap[needType, default: []].insert(keyword)
+                        matchedAnyKeyword = true
                     }
                 }
             }
+
+            // 2. キーワードが1つもヒットしない文字起こしクリップには穏やかな日常整理（clarity）を補助加算
+            if !matchedAnyKeyword {
+                scores[.clarity, default: 0] += 0.5
+            }
         }
 
-        let totalScore = max(0.001, scores.values.reduce(0, +))
+        let totalScore = scores.values.reduce(0, +)
+        guard totalScore > 0 else { return [] }
         return scores
             .map { type, score in
                 PsychologicalNeedScore(
@@ -306,6 +309,21 @@ enum SleepTalkAnalyzer {
                 if lhs.score != rhs.score { return lhs.score > rhs.score }
                 return lhs.type.rawValue < rhs.type.rawValue
             }
+    }
+
+    /// 英語キーワードの部分一致誤爆を防ぐため NLTokenizer で単語境界トークン集合を生成する
+    static func tokenizeLowercasedWords(in text: String) -> Set<String> {
+        var tokens: Set<String> = []
+        let tokenizer = NLTokenizer(unit: .word)
+        tokenizer.string = text
+        tokenizer.enumerateTokens(in: text.startIndex..<text.endIndex) { range, _ in
+            let token = String(text[range]).lowercased()
+            if !token.isEmpty {
+                tokens.insert(token)
+            }
+            return true
+        }
+        return tokens
     }
 
     /// NaturalLanguage の単語トークナイザを使ってキーワードの出現頻度を集計する
