@@ -73,7 +73,7 @@ final class RecordingStore {
         recordings.insert(item, at: 0)
         recomputeUnreadCount()
         saveMetadata()
-        logger.info("録音を追加しました: \(item.fileName, privacy: .public) (\(item.duration, format: .fixed(precision: 1))秒)")
+        logger.info("録音を追加しました: \(item.fileName, privacy: .private) (\(item.duration, format: .fixed(precision: 1))秒)")
     }
 
     /// 文字起こし結果をもとに音声ファイル名とメタデータを更新する
@@ -92,7 +92,7 @@ final class RecordingStore {
                 do {
                     try fileManager.moveItem(at: currentURL, to: destinationURL)
                     item.fileName = uniqueName
-                    logger.info("寝言内容でファイル名を変更しました: \(uniqueName, privacy: .public)")
+                    logger.info("寝言内容でファイル名を変更しました: \(uniqueName, privacy: .private)")
                 } catch {
                     logger.error("ファイル名変更に失敗しました: \(error.localizedDescription, privacy: .public)")
                 }
@@ -164,7 +164,29 @@ final class RecordingStore {
             }
         }
         recordings.removeAll { !$0.isFavorite }
+        recomputeUnreadCount()
         saveMetadata()
+    }
+
+    /// 指定日数より古いお気に入り以外の録音を削除し、削除件数を返す
+    @discardableResult
+    func deleteNonFavorites(olderThanDays days: Int, now: Date = Date()) -> Int {
+        guard days > 0 else { return 0 }
+        let cutoff = now.addingTimeInterval(-TimeInterval(days) * 24 * 60 * 60)
+        let targets = recordings.filter { !$0.isFavorite && $0.createdAt < cutoff }
+        for item in targets {
+            let url = fileURL(for: item)
+            if fileManager.fileExists(atPath: url.path) {
+                try? fileManager.removeItem(at: url)
+            }
+        }
+        guard !targets.isEmpty else { return 0 }
+        let ids = Set(targets.map(\.id))
+        recordings.removeAll { ids.contains($0.id) }
+        recomputeUnreadCount()
+        saveMetadata()
+        logger.info("\(days)日以上経過した非お気に入り録音を \(targets.count) 件自動削除しました")
+        return targets.count
     }
 
     /// 録音アイテムを日付ごと（新しい順）にグルーピングする
@@ -273,7 +295,10 @@ final class RecordingStore {
 
             let resourceValues = try? url.resourceValues(forKeys: [.creationDateKey, .contentModificationDateKey])
             let createdAt = resourceValues?.creationDate ?? resourceValues?.contentModificationDate ?? Date()
-            let duration = readAudioDuration(at: url)
+            guard let duration = readAudioDuration(at: url) else {
+                logger.warning("再生できない孤立音声ファイルを復元対象から除外しました")
+                continue
+            }
             let item = RecordingItem(
                 fileName: name,
                 createdAt: createdAt,
@@ -285,10 +310,11 @@ final class RecordingStore {
         return recovered
     }
 
-    private func readAudioDuration(at url: URL) -> TimeInterval {
+    private func readAudioDuration(at url: URL) -> TimeInterval? {
         guard let audioFile = try? AVAudioFile(forReading: url),
-              audioFile.processingFormat.sampleRate > 0 else {
-            return 1.0
+              audioFile.processingFormat.sampleRate > 0,
+              audioFile.length > 0 else {
+            return nil
         }
         let seconds = Double(audioFile.length) / audioFile.processingFormat.sampleRate
         return max(0.1, seconds)

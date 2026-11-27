@@ -25,8 +25,12 @@ struct SleepGoodsSectionView: View {
                 Spacer()
             }
 
-            Text("Helpful items tailored to your sleep condition (opens Amazon).")
+            Text("Sleep-related items you might like (opens Amazon).")
                 .font(.caption)
+                .foregroundStyle(.secondary)
+
+            Text("As an Amazon Associate, the developer earns from qualifying purchases.")
+                .font(.caption2)
                 .foregroundStyle(.secondary)
 
             VStack(spacing: 10) {

@@ -3,6 +3,7 @@ import SwiftUI
 /// 自動録音パラメータや夜間表示・音声認識・通知の設定を行う画面
 struct SettingsView: View {
     @Bindable var recorder: SleepAudioRecorder
+    var consentManager: AdConsentManager
     @State private var reminderPermissionDenied = false
     @State private var showAdvancedDetection = false
 
@@ -136,6 +137,13 @@ struct SettingsView: View {
                         Text("8 hours").tag(8)
                         Text("10 hours").tag(10)
                     }
+
+                    Picker("Auto-Delete Old Clips", selection: $recorder.settings.retentionDays) {
+                        Text("Never").tag(0)
+                        Text("30 days").tag(30)
+                        Text("90 days").tag(90)
+                        Text("180 days").tag(180)
+                    }
                 } header: {
                     Text("Recording Timers")
                 } footer: {
@@ -213,10 +221,18 @@ struct SettingsView: View {
                             Label("Privacy Policy", systemImage: "hand.raised.fill")
                         }
                     }
+
+                    if consentManager.isPrivacyOptionsRequired {
+                        Button {
+                            Task { await consentManager.presentPrivacyOptionsForm() }
+                        } label: {
+                            Label("Privacy & Ad Consent Settings", systemImage: "checkmark.shield")
+                        }
+                    }
                 }
 
                 if let goodsURL = AmazonSleepGoodsService.searchURL(for: AmazonSleepGoodsService.recommendations(for: nil)[0]) {
-                    Section("Sleep Goods (PR)") {
+                    Section {
                         Link(destination: goodsURL) {
                             HStack {
                                 Label("Browse Sleep Goods on Amazon", systemImage: "bag.fill")
@@ -229,6 +245,10 @@ struct SettingsView: View {
                                     .foregroundStyle(.orange)
                             }
                         }
+                    } header: {
+                        Text("Sleep Goods (PR)")
+                    } footer: {
+                        Text("As an Amazon Associate, the developer earns from qualifying purchases.")
                     }
                 }
 

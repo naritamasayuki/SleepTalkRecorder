@@ -11,6 +11,8 @@ import UserMessagingPlatform
 @Observable
 final class AdConsentManager {
     private(set) var canRequestAds: Bool = false
+    /// EEA/UK などでプライバシー設定（同意変更）の入口表示が必要か
+    private(set) var isPrivacyOptionsRequired: Bool = false
     private var hasRequestedConsent = false
     private var hasStartedSDK = false
     private let logger = Logger(subsystem: "com.sleeptalkrecorder.app", category: "AdConsentManager")
@@ -30,6 +32,7 @@ final class AdConsentManager {
         } catch {
             logger.warning("UMP同意フォームの処理でエラーが発生しました: \(error.localizedDescription, privacy: .public)")
         }
+        isPrivacyOptionsRequired = ConsentInformation.shared.privacyOptionsRequirementStatus == .required
 
         // 2. UMP 同意確認後に ATT ダイアログを表示（未回答の場合のみ）
         if ATTrackingManager.trackingAuthorizationStatus == .notDetermined {
@@ -43,6 +46,21 @@ final class AdConsentManager {
             await startMobileAdsIfNeeded()
         } else {
             logger.info("同意状態により広告リクエストを保留しています")
+        }
+    }
+
+    /// 設定画面から UMP のプライバシー設定フォームを表示し、同意状態を反映する
+    func presentPrivacyOptionsForm() async {
+        guard let rootVC = Self.activeRootViewController() else { return }
+        do {
+            try await ConsentForm.presentPrivacyOptionsForm(from: rootVC)
+        } catch {
+            logger.warning("プライバシー設定フォームの表示に失敗しました: \(error.localizedDescription, privacy: .public)")
+        }
+        canRequestAds = ConsentInformation.shared.canRequestAds
+        isPrivacyOptionsRequired = ConsentInformation.shared.privacyOptionsRequirementStatus == .required
+        if canRequestAds {
+            await startMobileAdsIfNeeded()
         }
     }
 

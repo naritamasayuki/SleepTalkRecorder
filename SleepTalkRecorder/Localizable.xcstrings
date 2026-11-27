@@ -1111,16 +1111,6 @@
         }
       }
     },
-    "Helpful items tailored to your sleep condition (opens Amazon).": {
-      "localizations": {
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "睡眠傾向に合わせた快眠サポートグッズ（Amazonが開きます）。"
-          }
-        }
-      }
-    },
     "Hour": {
       "localizations": {
         "en": {
@@ -3884,23 +3874,6 @@
         }
       }
     },
-    "Enable Daily Reminder (23:00)": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Enable Daily Reminder (23:00)"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "毎日23:00にお知らせする"
-          }
-        }
-      }
-    },
     "Daily bedtime reminder enabled!": {
       "extractionState": "manual",
       "localizations": {
@@ -4254,6 +4227,159 @@
           "stringUnit": {
             "state": "translated",
             "value": "寝言の自動録音モニタリングを停止します。"
+          }
+        }
+      }
+    },
+    "Privacy & Ad Consent Settings": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Privacy & Ad Consent Settings"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "プライバシーと広告の同意設定"
+          }
+        }
+      }
+    },
+    "Sleep-related items you might like (opens Amazon).": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sleep-related items you might like (opens Amazon)."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "おすすめの快眠グッズ（Amazonが開きます）。"
+          }
+        }
+      }
+    },
+    "As an Amazon Associate, the developer earns from qualifying purchases.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "As an Amazon Associate, the developer earns from qualifying purchases."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Amazonのアソシエイトとして、本アプリの開発者は適格販売により収入を得ています。"
+          }
+        }
+      }
+    },
+    "Auto-Delete Old Clips": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auto-Delete Old Clips"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "古い録音を自動削除（お気に入り以外）"
+          }
+        }
+      }
+    },
+    "Never": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Never"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "しない"
+          }
+        }
+      }
+    },
+    "30 days": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "30 days"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "30日"
+          }
+        }
+      }
+    },
+    "90 days": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "90 days"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "90日"
+          }
+        }
+      }
+    },
+    "180 days": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "180 days"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "180日"
+          }
+        }
+      }
+    },
+    "Enable Daily Reminder (%@)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enable Daily Reminder (%@)"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "毎日%@にお知らせする"
           }
         }
       }

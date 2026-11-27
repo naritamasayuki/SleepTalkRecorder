@@ -1,3 +1,4 @@
+import AVFoundation
 import XCTest
 @testable import SleepTalkRecorder
 
@@ -8,6 +9,21 @@ final class RecordingStoreTests: XCTestCase {
             .appendingPathComponent("SleepTalkRecorderTests_\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         return dir
+    }
+
+    private func writeSilentM4A(to url: URL, seconds: Double = 0.5) throws {
+        let sampleRate = 44_100.0
+        let format = try XCTUnwrap(AVAudioFormat(standardFormatWithSampleRate: sampleRate, channels: 1))
+        let settings: [String: Any] = [
+            AVFormatIDKey: kAudioFormatMPEG4AAC,
+            AVSampleRateKey: sampleRate,
+            AVNumberOfChannelsKey: 1
+        ]
+        let file = try AVAudioFile(forWriting: url, settings: settings, commonFormat: .pcmFormatFloat32, interleaved: false)
+        let frames = AVAudioFrameCount(sampleRate * seconds)
+        let buffer = try XCTUnwrap(AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frames))
+        buffer.frameLength = frames
+        try file.write(from: buffer)
     }
 
     func testAddLoadAndDeleteRecording() throws {
@@ -215,7 +231,10 @@ final class RecordingStoreTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: tempDirectory) }
 
         let orphanURL = tempDirectory.appendingPathComponent("sleeptalk_orphan.m4a")
-        try Data("orphan audio".utf8).write(to: orphanURL)
+        try writeSilentM4A(to: orphanURL)
+        // 再生不可能な壊れたm4aは復元対象外になることもあわせて確認
+        let brokenURL = tempDirectory.appendingPathComponent("broken_orphan.m4a")
+        try Data("not an audio file".utf8).write(to: brokenURL)
         try Data("{ invalid json !!!".utf8).write(to: tempDirectory.appendingPathComponent("recordings.json"))
 
         let store = RecordingStore(directoryURL: tempDirectory)
@@ -223,6 +242,32 @@ final class RecordingStoreTests: XCTestCase {
         XCTAssertEqual(store.recordings.first?.fileName, "sleeptalk_orphan.m4a")
         XCTAssertTrue(FileManager.default.fileExists(atPath: tempDirectory.appendingPathComponent("recordings.corrupt.json").path))
         XCTAssertNotNil(store.lastErrorMessage)
+    }
+
+    func testDeleteNonFavoritesOlderThanDaysKeepsFavoritesAndRecent() throws {
+        let tempDirectory = try makeTempDirectory()
+        defer { try? FileManager.default.removeItem(at: tempDirectory) }
+
+        let store = RecordingStore(directoryURL: tempDirectory)
+        let now = Date()
+        let oldDate = now.addingTimeInterval(-40 * 24 * 60 * 60)
+        let recentDate = now.addingTimeInterval(-5 * 24 * 60 * 60)
+
+        let oldNormalURL = tempDirectory.appendingPathComponent("old_normal.m4a")
+        let oldFavURL = tempDirectory.appendingPathComponent("old_fav.m4a")
+        let recentNormalURL = tempDirectory.appendingPathComponent("recent_normal.m4a")
+        try Data("a".utf8).write(to: oldNormalURL)
+        try Data("b".utf8).write(to: oldFavURL)
+        try Data("c".utf8).write(to: recentNormalURL)
+
+        store.add(RecordingItem(fileName: "old_normal.m4a", createdAt: oldDate, duration: 2.0, peakDecibels: -20.0, isFavorite: false))
+        store.add(RecordingItem(fileName: "old_fav.m4a", createdAt: oldDate, duration: 2.0, peakDecibels: -20.0, isFavorite: true))
+        store.add(RecordingItem(fileName: "recent_normal.m4a", createdAt: recentDate, duration: 2.0, peakDecibels: -20.0, isFavorite: false))
+
+        let deletedCount = store.deleteNonFavorites(olderThanDays: 30, now: now)
+        XCTAssertEqual(deletedCount, 1)
+        XCTAssertEqual(Set(store.recordings.map(\.fileName)), ["old_fav.m4a", "recent_normal.m4a"])
+        XCTAssertFalse(FileManager.default.fileExists(atPath: oldNormalURL.path))
     }
 
     func testUnreadCountTracksNewRecordingsUntilMarkedRead() throws {

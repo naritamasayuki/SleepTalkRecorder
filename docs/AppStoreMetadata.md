@@ -18,7 +18,7 @@
 - **サブタイトル（30文字以内）**:
   `寝言だけを録音し心のサインを分析`
 - **プロモーションテキスト（170文字以内）**:
-  `無音はスキップして「寝言だけ」を自動録音。さらに音声を文字起こししてファイル名にし、言葉と声のトーンから深層心理の要求を分析します。`
+  `無音はスキップして「寝言だけ」を自動録音。さらに音声を文字起こししてファイル名にし、言葉の傾向からエンタメ感覚で心のサインを振り返れます。`
 - **概要（説明文）**:
   ```text
   「寝ている間、自分はどんなことを話しているんだろう？」
@@ -44,7 +44,7 @@
   ※ 分析レポートはエンタメ・セルフリフレクション目的の参考情報であり、医学的根拠・医療診断ではありません。
   ```
 - **キーワード（100文字以内）**:
-  `寝言,録音,睡眠,いびき,ボイスレコーダー,文字起こし,深層心理,睡眠分析,バックグラウンド録音,寝室`
+  `寝言,録音,睡眠,寝言録音,ボイスレコーダー,文字起こし,深層心理,睡眠記録,バックグラウンド録音,寝室`
 
 ---
 
@@ -55,7 +55,7 @@
 - **Subtitle (max 30 chars)**:
   `Record & analyze sleep talking`
 - **Promotional Text (max 170 chars)**:
-  `Skip silence and automatically record only sleep talk. Transcribe clips into filenames and uncover subconscious needs from your nighttime voice.`
+  `Skip silence and automatically record only sleep talk. Transcribe clips into filenames and explore fun word-based insights from your nighttime speech.`
 - **Description**:
   ```text
   Ever wondered what you say in your sleep?
@@ -76,7 +76,7 @@
   Note: Plugging in your charger is recommended for overnight monitoring. Analysis insights are for entertainment and self-reflection only, not medical diagnosis.
   ```
 - **Keywords (max 100 chars)**:
-  `sleep talk,recorder,sleep,snore,voice recorder,transcription,subconscious,dream,night,audio`
+  `sleep talk,recorder,sleep,sleep talking,voice recorder,transcription,subconscious,dream,night,audio`
 
 ---
 

@@ -67,7 +67,7 @@ struct ContentView: View {
                         Label("Analysis", systemImage: "chart.bar.xaxis")
                     }
 
-                    SettingsView(recorder: recorder)
+                    SettingsView(recorder: recorder, consentManager: consentManager)
                         .tag(AppTab.settings)
                         .tabItem {
                             Label("Settings", systemImage: "gearshape.fill")

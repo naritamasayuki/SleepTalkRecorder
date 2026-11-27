@@ -10,7 +10,7 @@
 
 ### 1. 収集・保存されるデータ
 本アプリは、以下の機能を提供するために端末のマイクおよび音声認識機能を使用します。
-- **録音された音声データ（.m4a）**: 端末内のアプリ専用領域（Documents フォルダ）にのみ保存されます。
+- **録音された音声データ（.m4a）**: 端末内のアプリ専用領域（Documents フォルダ）に保存されます。開発者や第三者へは送信されませんが、iCloud バックアップ等の端末バックアップを有効にしている場合は、Apple のバックアップに含まれます。
 - **文字起こしテキストおよび設定情報**: 端末内にのみ保存されます。
 
 ### 2. データの外部送信について
@@ -37,7 +37,7 @@
 
 ### 1. Data Stored on Your Device
 The App uses your device's microphone and speech recognition to provide its features:
-- **Recorded Audio Clips (.m4a)**: Stored exclusively in the App's local sandbox on your device.
+- **Recorded Audio Clips (.m4a)**: Stored in the App's local sandbox on your device. They are never sent to the developer or third parties, but may be included in your device backups (e.g. iCloud Backup) if enabled.
 - **Transcriptions & Settings**: Stored locally on your device only.
 
 ### 2. External Data Transmission

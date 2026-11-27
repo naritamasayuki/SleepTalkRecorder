@@ -457,6 +457,15 @@ private struct MorningSummarySheet: View {
 
     @State private var reminderScheduledMessage: String?
 
+    private var reminderTimeText: String {
+        let components = DateComponents(
+            hour: recorder.settings.bedtimeReminderHour,
+            minute: recorder.settings.bedtimeReminderMinute
+        )
+        let date = Calendar.current.date(from: components) ?? Date()
+        return date.formatted(date: .omitted, time: .shortened)
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -542,7 +551,7 @@ private struct MorningSummarySheet: View {
                                     }
                                 }
                             } label: {
-                                Label("Enable Daily Reminder (23:00)", systemImage: "bell.fill")
+                                Label("Enable Daily Reminder (\(reminderTimeText))", systemImage: "bell.fill")
                                     .font(.subheadline.weight(.semibold))
                                     .frame(maxWidth: .infinity)
                             }

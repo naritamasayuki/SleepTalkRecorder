@@ -2,6 +2,7 @@ import AVFoundation
 import Foundation
 import OSLog
 import Observation
+import UIKit
 
 /// 1回の睡眠モニタリングセッションの結果を保持・永続化するサマリーモデル
 struct SessionSummary: Codable, Equatable, Sendable {
@@ -98,6 +99,8 @@ final class SleepAudioRecorder {
     private var processor: AudioStreamProcessor?
     private var interruptionObserver: NSObjectProtocol?
     private var routeChangeObserver: NSObjectProtocol?
+    private var engineConfigObserver: NSObjectProtocol?
+    private var mediaResetObserver: NSObjectProtocol?
     private var countdownTask: Task<Void, Never>?
     private var autoStopTask: Task<Void, Never>?
     private var storageCheckTask: Task<Void, Never>?
@@ -240,6 +243,8 @@ final class SleepAudioRecorder {
             return
         }
 
+        store.deleteNonFavorites(olderThanDays: settings.retentionDays)
+
         guard hasSufficientStorage() else {
             errorMessage = String(localized: "Not enough free storage space to start overnight recording. Please free up at least 100 MB.")
             return
@@ -316,7 +321,7 @@ final class SleepAudioRecorder {
         autoStopDate = nil
 
         unregisterAudioNotifications()
-        processor?.finalizeIfNeeded()
+        let savedOnStop = processor?.finalizeIfNeeded() ?? false
         cleanupEngine()
         deactivateAudioSession()
 
@@ -326,7 +331,7 @@ final class SleepAudioRecorder {
             activeInterruptionStart = nil
         }
 
-        let recordedCount = sessionRecordingCount
+        let recordedCount = sessionRecordingCount + (savedOnStop ? 1 : 0)
         if let startedAt = sessionStartTime {
             let shouldRecordSummary = recordedCount > 0 || endedAutomatically || endedDueToLowStorage || !sessionInterruptions.isEmpty
             if shouldRecordSummary {
@@ -472,6 +477,8 @@ final class SleepAudioRecorder {
                             self.state = targetState
                         }
                     }
+                    // 画面に表示されないバックグラウンドでは表示用の値の更新を省き、再描画と電力消費を抑える
+                    guard UIApplication.shared.applicationState != .background else { return }
                     if abs(self.currentDecibels - decibels) >= 0.4 {
                         self.currentDecibels = decibels
                     }
@@ -484,7 +491,10 @@ final class SleepAudioRecorder {
                 Task { @MainActor [weak self] in
                     guard let self else { return }
                     self.store.add(item)
-                    self.sessionRecordingCount += 1
+                    // 停止処理で同期的に計上済みのクリップは二重加算しない（待機中はカウンタを汚さない）
+                    if self.state != .idle {
+                        self.sessionRecordingCount += 1
+                    }
 
                     if self.settings.transcribeForFileName {
                         let fileURL = self.store.fileURL(for: item)
@@ -558,6 +568,32 @@ final class SleepAudioRecorder {
                 self?.handleRouteChange(reason: reason)
             }
         }
+
+        engineConfigObserver = center.addObserver(
+            forName: .AVAudioEngineConfigurationChange,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            // AVAudioEngine は Sendable でないため ObjectIdentifier で比較する
+            let changedID = (notification.object as AnyObject?).map(ObjectIdentifier.init)
+            Task { @MainActor [weak self] in
+                guard let self, let engine = self.audioEngine,
+                      changedID == ObjectIdentifier(engine) else { return }
+                self.logger.info("AVAudioEngine の構成変更を検知したためエンジンを再構成します")
+                self.restartEngine(reconfigureSession: false)
+            }
+        }
+
+        mediaResetObserver = center.addObserver(
+            forName: AVAudioSession.mediaServicesWereResetNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                self?.logger.warning("メディアサービスがリセットされたためセッションとエンジンを再構成します")
+                self?.restartEngine(reconfigureSession: true)
+            }
+        }
     }
 
     private func unregisterAudioNotifications() {
@@ -569,6 +605,14 @@ final class SleepAudioRecorder {
         if let routeChangeObserver {
             center.removeObserver(routeChangeObserver)
             self.routeChangeObserver = nil
+        }
+        if let engineConfigObserver {
+            center.removeObserver(engineConfigObserver)
+            self.engineConfigObserver = nil
+        }
+        if let mediaResetObserver {
+            center.removeObserver(mediaResetObserver)
+            self.mediaResetObserver = nil
         }
     }
 
@@ -615,6 +659,12 @@ final class SleepAudioRecorder {
                         self.activeInterruptionStart = nil
                     }
                     self.state = stillCountingDown ? .countdown : .monitoring
+                    // 割り込み中に開始遅延が満了していた場合は、ここで遅延終了処理（自動停止の設定）を行う
+                    if !stillCountingDown, self.countdownEndTime != nil {
+                        self.countdownEndTime = nil
+                        self.countdownTask = nil
+                        self.scheduleAutoStopIfNeeded(from: Date())
+                    }
                     self.logger.info("割り込み後の自動復帰に成功しました (試行 \(attempt + 1) 回目)")
                     return
                 } catch {
@@ -632,19 +682,31 @@ final class SleepAudioRecorder {
     private func handleRouteChange(reason: AVAudioSession.RouteChangeReason) {
         // オーディオ入力デバイスの抜き差し時に入力フォーマットが変わる可能性があるため再起動する
         if reason == .oldDeviceUnavailable || reason == .newDeviceAvailable {
-            guard state == .monitoring || state == .recording || state == .countdown else { return }
-            let wasCountdown = state == .countdown
             logger.info("オーディオルート変更を検知したためエンジンを再構成します")
-            processor?.finalizeIfNeeded()
-            cleanupEngine()
-            do {
-                try startAudioEngine(detectionEnabled: !wasCountdown)
-                state = wasCountdown ? .countdown : .monitoring
-            } catch {
-                logger.error("ルート変更後の再起動に失敗しました: \(error.localizedDescription, privacy: .public)")
-                errorMessage = String(localized: "Could not resume recording after audio route change.")
-                stopMonitoring()
+            restartEngine(reconfigureSession: false)
+        }
+    }
+
+    /// 監視中のエンジンを作り直す（ルート変更・エンジン構成変更・メディアサービスリセット共通）
+    private func restartEngine(reconfigureSession: Bool) {
+        guard state == .monitoring || state == .recording || state == .countdown else { return }
+        let wasCountdown = state == .countdown
+        let savedClip = processor?.finalizeIfNeeded() ?? false
+        if savedClip {
+            sessionRecordingCount += 1
+        }
+        cleanupEngine()
+        do {
+            if reconfigureSession {
+                try configureAudioSession()
             }
+            try startAudioEngine(detectionEnabled: !wasCountdown)
+            state = wasCountdown ? .countdown : .monitoring
+        } catch {
+            logger.error("エンジン再構成に失敗しました: \(error.localizedDescription, privacy: .public)")
+            errorMessage = String(localized: "Could not resume recording after audio route change.")
+            BedtimeReminderManager.sendInterruptionFailureNotification()
+            stopMonitoring()
         }
     }
 }
@@ -653,7 +715,7 @@ final class SleepAudioRecorder {
 
 /// 専用のシリアルキュー上でPCMバッファ解析・リングバッファ管理・ファイル書き出しを行うプロセッサ
 private final class AudioStreamProcessor: @unchecked Sendable {
-    private let queue = DispatchQueue(label: "com.sleeptalkrecorder.audioprocessing", qos: .userInitiated)
+    private let queue = DispatchQueue(label: "com.sleeptalkrecorder.audioprocessing", qos: .utility)
     private let inputFormat: AVAudioFormat
     private let directoryURL: URL
     private let logger = Logger(subsystem: "com.sleeptalkrecorder.app", category: "AudioStreamProcessor")
@@ -723,17 +785,19 @@ private final class AudioStreamProcessor: @unchecked Sendable {
         }
     }
 
-    func finalizeIfNeeded() {
+    @discardableResult
+    func finalizeIfNeeded() -> Bool {
         queue.sync {
             guard detector.state == .recording else {
                 ringBuffer.clear()
-                return
+                return false
             }
             let effectiveSpeech = detector.recordingDuration - detector.silenceDuration
             let shouldSave = effectiveSpeech >= detector.settings.minimumDurationSeconds
             let peak = detector.peakDecibels
-            finishRecordingFile(shouldSave: shouldSave, peakDecibels: peak)
+            let saved = finishRecordingFile(shouldSave: shouldSave, peakDecibels: peak)
             detector.reset()
+            return saved
         }
     }
 
@@ -843,7 +907,8 @@ private final class AudioStreamProcessor: @unchecked Sendable {
         }
     }
 
-    private func finishRecordingFile(shouldSave: Bool, peakDecibels: Float) {
+    @discardableResult
+    private func finishRecordingFile(shouldSave: Bool, peakDecibels: Float) -> Bool {
         let savedURL = activeFileURL
         let savedName = activeFileName
         let savedDate = recordingStartDate ?? Date()
@@ -856,7 +921,7 @@ private final class AudioStreamProcessor: @unchecked Sendable {
         recordingStartDate = nil
         recordedDuration = 0
 
-        guard let savedURL, let savedName else { return }
+        guard let savedURL, let savedName else { return false }
 
         if shouldSave, savedDuration > 0 {
             let item = RecordingItem(
@@ -866,9 +931,11 @@ private final class AudioStreamProcessor: @unchecked Sendable {
                 peakDecibels: peakDecibels
             )
             onRecordingSaved(item)
+            return true
         } else {
             logger.debug("最小録音時間未満のためノイズとして破棄しました (\(savedDuration, format: .fixed(precision: 2))秒)")
             cleanupTempFile(at: savedURL)
+            return false
         }
     }
 

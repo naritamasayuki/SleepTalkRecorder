@@ -173,7 +173,7 @@ enum AmazonSleepGoodsService {
             subtitle: String(localized: "Gentle pressure for a grounded, calm feeling"),
             symbolName: "shield.lefthalf.filled",
             searchKeywordJa: "加重ブランケット 安眠",
-            searchKeywordEn: "weighted blanket for anxiety sleep"
+            searchKeywordEn: "weighted blanket for sleeping"
         )
     }
 }

@@ -15,7 +15,23 @@ final class AudioPlaybackManager: NSObject, AVAudioPlayerDelegate {
 
     private var player: AVAudioPlayer?
     private var progressTimer: Timer?
+    private var interruptionObserver: NSObjectProtocol?
     private let logger = Logger(subsystem: "com.sleeptalkrecorder.app", category: "AudioPlaybackManager")
+
+    override init() {
+        super.init()
+        interruptionObserver = NotificationCenter.default.addObserver(
+            forName: AVAudioSession.interruptionNotification,
+            object: AVAudioSession.sharedInstance(),
+            queue: .main
+        ) { [weak self] notification in
+            guard let raw = notification.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt,
+                  AVAudioSession.InterruptionType(rawValue: raw) == .began else { return }
+            Task { @MainActor [weak self] in
+                self?.pause()
+            }
+        }
+    }
 
     /// 指定した録音アイテムを再生または一時停止する
     func togglePlayback(for item: RecordingItem, fileURL: URL) {
@@ -36,7 +52,7 @@ final class AudioPlaybackManager: NSObject, AVAudioPlayerDelegate {
 
         guard FileManager.default.fileExists(atPath: fileURL.path) else {
             errorMessage = String(localized: "Audio file could not be found.")
-            logger.error("再生対象ファイルが存在しません: \(fileURL.path, privacy: .public)")
+            logger.error("再生対象ファイルが存在しません: \(fileURL.lastPathComponent, privacy: .private)")
             return
         }
 
@@ -94,6 +110,7 @@ final class AudioPlaybackManager: NSObject, AVAudioPlayerDelegate {
 
     /// 再生を完全に停止してリソースを解放する
     func stop() {
+        let hadPlayer = player != nil
         stopTimer()
         player?.stop()
         player = nil
@@ -101,6 +118,10 @@ final class AudioPlaybackManager: NSObject, AVAudioPlayerDelegate {
         isPlaying = false
         currentTime = 0
         duration = 0
+        // 自分が再生していた場合のみセッションを解放し、他アプリの音声を元に戻す
+        if hadPlayer {
+            try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        }
     }
 
     private func startTimer() {

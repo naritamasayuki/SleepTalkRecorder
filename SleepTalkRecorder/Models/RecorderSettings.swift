@@ -28,6 +28,8 @@ struct RecorderSettings: Equatable, Codable, Sendable {
     var startDelayMinutes: Int
     /// 監視開始から自動で停止するまでの時間（時間: 0は無制限、1〜12）
     var autoStopHours: Int
+    /// お気に入り以外の録音を自動削除するまでの日数（0は無期限）
+    var retentionDays: Int
 
     static let `default` = RecorderSettings(
         thresholdDecibels: -35.0,
@@ -42,7 +44,8 @@ struct RecorderSettings: Equatable, Codable, Sendable {
         bedtimeReminderHour: 23,
         bedtimeReminderMinute: 0,
         startDelayMinutes: 0,
-        autoStopHours: 8
+        autoStopHours: 8,
+        retentionDays: 0
     )
 
     init(
@@ -58,7 +61,8 @@ struct RecorderSettings: Equatable, Codable, Sendable {
         bedtimeReminderHour: Int = 23,
         bedtimeReminderMinute: Int = 0,
         startDelayMinutes: Int = 0,
-        autoStopHours: Int = 8
+        autoStopHours: Int = 8,
+        retentionDays: Int = 0
     ) {
         self.thresholdDecibels = thresholdDecibels
         self.silenceTimeoutSeconds = silenceTimeoutSeconds
@@ -73,6 +77,7 @@ struct RecorderSettings: Equatable, Codable, Sendable {
         self.bedtimeReminderMinute = bedtimeReminderMinute
         self.startDelayMinutes = startDelayMinutes
         self.autoStopHours = autoStopHours
+        self.retentionDays = retentionDays
     }
 
     init(from decoder: Decoder) throws {
@@ -91,6 +96,7 @@ struct RecorderSettings: Equatable, Codable, Sendable {
         bedtimeReminderMinute = try container.decodeIfPresent(Int.self, forKey: .bedtimeReminderMinute) ?? defaults.bedtimeReminderMinute
         startDelayMinutes = try container.decodeIfPresent(Int.self, forKey: .startDelayMinutes) ?? defaults.startDelayMinutes
         autoStopHours = try container.decodeIfPresent(Int.self, forKey: .autoStopHours) ?? defaults.autoStopHours
+        retentionDays = try container.decodeIfPresent(Int.self, forKey: .retentionDays) ?? defaults.retentionDays
     }
 
     private static let storageKey = "com.sleeptalkrecorder.settings"
@@ -126,7 +132,8 @@ struct RecorderSettings: Equatable, Codable, Sendable {
             bedtimeReminderHour: min(max(bedtimeReminderHour, 0), 23),
             bedtimeReminderMinute: min(max(bedtimeReminderMinute, 0), 59),
             startDelayMinutes: min(max(startDelayMinutes, 0), 60),
-            autoStopHours: min(max(autoStopHours, 0), 12)
+            autoStopHours: min(max(autoStopHours, 0), 12),
+            retentionDays: min(max(retentionDays, 0), 365)
         )
     }
 }

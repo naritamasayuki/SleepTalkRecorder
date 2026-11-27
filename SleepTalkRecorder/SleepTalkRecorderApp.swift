@@ -54,8 +54,7 @@ struct SleepTalkShortcuts: AppShortcutsProvider {
         AppShortcut(
             intent: StartSleepMonitoringIntent(),
             phrases: [
-                "Start sleep recording in \(.applicationName)",
-                "\(.applicationName)で寝言録音を開始"
+                "Start sleep recording in \(.applicationName)"
             ],
             shortTitle: "Start Sleep Recording",
             systemImageName: "moon.stars.fill"
@@ -63,8 +62,7 @@ struct SleepTalkShortcuts: AppShortcutsProvider {
         AppShortcut(
             intent: StopSleepMonitoringIntent(),
             phrases: [
-                "Stop sleep recording in \(.applicationName)",
-                "\(.applicationName)の寝言録音を停止"
+                "Stop sleep recording in \(.applicationName)"
             ],
             shortTitle: "Stop Sleep Recording",
             systemImageName: "stop.fill"
