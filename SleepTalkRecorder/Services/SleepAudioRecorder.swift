@@ -661,6 +661,7 @@ final class SleepAudioRecorder {
                     self.state = stillCountingDown ? .countdown : .monitoring
                     // 割り込み中に開始遅延が満了していた場合は、ここで遅延終了処理（自動停止の設定）を行う
                     if !stillCountingDown, self.countdownEndTime != nil {
+                        self.countdownTask?.cancel()
                         self.countdownEndTime = nil
                         self.countdownTask = nil
                         self.scheduleAutoStopIfNeeded(from: Date())
@@ -692,9 +693,6 @@ final class SleepAudioRecorder {
         guard state == .monitoring || state == .recording || state == .countdown else { return }
         let wasCountdown = state == .countdown
         let savedClip = processor?.finalizeIfNeeded() ?? false
-        if savedClip {
-            sessionRecordingCount += 1
-        }
         cleanupEngine()
         do {
             if reconfigureSession {
@@ -702,9 +700,14 @@ final class SleepAudioRecorder {
             }
             try startAudioEngine(detectionEnabled: !wasCountdown)
             state = wasCountdown ? .countdown : .monitoring
+            // 成功時は onRecordingSaved の Task（state != .idle）が +1 するので、ここでは数えない
         } catch {
+            // このあと stopMonitoring() で .idle になり Task 側では加算されないため、ここで計上する
+            if savedClip {
+                sessionRecordingCount += 1
+            }
             logger.error("エンジン再構成に失敗しました: \(error.localizedDescription, privacy: .public)")
-            errorMessage = String(localized: "Could not resume recording after audio route change.")
+            errorMessage = String(localized: "Could not resume audio monitoring.")
             BedtimeReminderManager.sendInterruptionFailureNotification()
             stopMonitoring()
         }

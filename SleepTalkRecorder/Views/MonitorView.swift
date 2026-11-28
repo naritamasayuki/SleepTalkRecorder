@@ -220,7 +220,7 @@ struct MonitorView: View {
     private var meterAndThresholdCard: some View {
         VStack(spacing: 16) {
             LevelMeterView(
-                decibels: recorder.currentDecibels,
+                decibels: isNightDimmed ? -60.0 : recorder.currentDecibels,
                 thresholdDecibels: recorder.settings.thresholdDecibels,
                 isRecording: recorder.state == .recording
             )
@@ -409,6 +409,9 @@ struct MonitorView: View {
         case .monitoring:
             return String(localized: "Monitoring Audio")
         case .recording:
+            if isNightDimmed {
+                return String(localized: "Recording")
+            }
             let durationText = String(format: "%.1f", recorder.currentClipDuration)
             return String(localized: "Recording (\(durationText)s)")
         case .interrupted:
