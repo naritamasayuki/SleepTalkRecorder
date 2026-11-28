@@ -86,6 +86,11 @@ struct SleepTalkRecorderApp: App {
                 playbackManager: dependencies.playbackManager,
                 consentManager: dependencies.consentManager
             )
+            .task {
+                guard hasCompletedOnboarding else { return }
+                try? await Task.sleep(for: .milliseconds(400))
+                await dependencies.consentManager.requestConsentAndStartAdsIfNeeded()
+            }
             .onChange(of: scenePhase) { _, newPhase in
                 guard newPhase == .active, hasCompletedOnboarding else { return }
                 Task {

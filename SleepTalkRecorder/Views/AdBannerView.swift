@@ -13,22 +13,26 @@ final class AdConsentManager {
     private(set) var canRequestAds: Bool = false
     /// EEA/UK などでプライバシー設定（同意変更）の入口表示が必要か
     private(set) var isPrivacyOptionsRequired: Bool = false
-    private var hasRequestedConsent = false
+    private var hasCompletedFlow = false
+    private var isRunningFlow = false
     private var hasStartedSDK = false
     private let logger = Logger(subsystem: "com.sleeptalkrecorder.app", category: "AdConsentManager")
 
     /// オンボーディング完了後に UMP 同意確認 → ATT → AdMob SDK 開始の順で実行する
     func requestConsentAndStartAdsIfNeeded() async {
-        guard !hasRequestedConsent else { return }
-        hasRequestedConsent = true
+        guard !hasCompletedFlow, !isRunningFlow else { return }
+        isRunningFlow = true
+        defer { isRunningFlow = false }
 
         // 1. UMP 同意情報の更新（EEA/UK では同意フォームを提示）
+        var umpSucceeded = false
         let parameters = RequestParameters()
         do {
             try await ConsentInformation.shared.requestConsentInfoUpdate(with: parameters)
             if let rootVC = Self.activeRootViewController() {
                 try await ConsentForm.loadAndPresentIfRequired(from: rootVC)
             }
+            umpSucceeded = true
         } catch {
             logger.warning("UMP同意フォームの処理でエラーが発生しました: \(error.localizedDescription, privacy: .public)")
         }
@@ -39,12 +43,17 @@ final class AdConsentManager {
             _ = await ATTrackingManager.requestTrackingAuthorization()
         }
 
-        // 3. 同意状態が広告リクエスト可能であれば AdMob SDK を初期化する
-        let allowed = ConsentInformation.shared.canRequestAds
-        canRequestAds = allowed
+        // 3. 同意状態が広告リクエスト可能（またはUMP未設定・一時エラー時のフォールバック）なら先にSDKを初期化してから表示を許可する
+        let allowed = umpSucceeded ? ConsentInformation.shared.canRequestAds : true
+        if umpSucceeded {
+            hasCompletedFlow = true
+        }
+
         if allowed {
             await startMobileAdsIfNeeded()
+            canRequestAds = true
         } else {
+            canRequestAds = false
             logger.info("同意状態により広告リクエストを保留しています")
         }
     }
@@ -57,11 +66,12 @@ final class AdConsentManager {
         } catch {
             logger.warning("プライバシー設定フォームの表示に失敗しました: \(error.localizedDescription, privacy: .public)")
         }
-        canRequestAds = ConsentInformation.shared.canRequestAds
+        let allowed = ConsentInformation.shared.canRequestAds
         isPrivacyOptionsRequired = ConsentInformation.shared.privacyOptionsRequirementStatus == .required
-        if canRequestAds {
+        if allowed {
             await startMobileAdsIfNeeded()
         }
+        canRequestAds = allowed
     }
 
     private func startMobileAdsIfNeeded() async {
@@ -134,8 +144,11 @@ private struct AdMobBannerRepresentable: UIViewRepresentable {
         let bannerView = BannerView(adSize: AdSizeBanner)
         bannerView.adUnitID = adUnitID
         bannerView.delegate = context.coordinator
-        bannerView.rootViewController = AdConsentManager.activeRootViewController()
-        bannerView.load(Request())
+        if let rootVC = AdConsentManager.activeRootViewController() {
+            bannerView.rootViewController = rootVC
+            context.coordinator.hasLoaded = true
+            bannerView.load(Request())
+        }
         return bannerView
     }
 
@@ -143,9 +156,14 @@ private struct AdMobBannerRepresentable: UIViewRepresentable {
         if uiView.rootViewController == nil {
             uiView.rootViewController = AdConsentManager.activeRootViewController()
         }
+        if !context.coordinator.hasLoaded, uiView.rootViewController != nil {
+            context.coordinator.hasLoaded = true
+            uiView.load(Request())
+        }
     }
 
     final class Coordinator: NSObject, BannerViewDelegate {
+        var hasLoaded = false
         private let logger = Logger(subsystem: "com.sleeptalkrecorder.app", category: "AdBannerView")
 
         func bannerViewDidReceiveAd(_ bannerView: BannerView) {
